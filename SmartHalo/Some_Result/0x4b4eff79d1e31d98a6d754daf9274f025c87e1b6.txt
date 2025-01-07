@@ -1,0 +1,126 @@
+```solidity
+// Decompiled by library.dedaub.com
+// 2023.08.11 01:02 UTC
+// Compiled using the solidity compiler version 0.8.10
+// Data structures and variables inferred from the use of storage instructions
+
+pragma solidity ^0.8.10;
+
+contract OptimizedContract {
+    mapping (address => uint256) private _balanceOf; // STORAGE[0x0] // The name of the corresponding state variable before the modification:_balanceOf
+    mapping (address => mapping (address => uint256)) private _increaseAllowance; // STORAGE[0x1] // The name of the corresponding state variable before the modification:_increaseAllowance
+    uint256 private _totalSupply; // STORAGE[0x2] // The name of the corresponding state variable before the modification:_totalSupply
+    uint256[] private _arrayDynamic1; // STORAGE[0x3] // The name of the corresponding state variable before the modification:array_3
+    uint256[] private _arrayDynamic2; // STORAGE[0x4] // The name of the corresponding state variable before the modification:array_4
+    uint256 private _maxTransactionAmount; // STORAGE[0x9] // The name of the corresponding state variable before the modification:_maxTransactionAmount
+    uint256 private _swapTokensAtAmount; // STORAGE[0xa] // The name of the corresponding state variable before the modification:_swapTokensAtAmount
+    uint256 private _maxWallet; // STORAGE[0xb] // The name of the corresponding state variable before the modification:_maxWallet
+    mapping (address => uint256) private _lastTransactionBlock; // STORAGE[0xd] // The name of the corresponding state variable before the modification:owner_d
+    uint256 private _buyTotalFees; // STORAGE[0xf] // The name of the corresponding state variable before the modification:_buyTotalFees
+    uint256 private _buyCharityFee; // STORAGE[0x10] // The name of the corresponding state variable before the modification:_buyCharityFee
+    uint256 private _buyMarketingFee; // STORAGE[0x11] // The name of the corresponding state variable before the modification:_buyMarketingFee
+    uint256 private _buyLiquidityFee; // STORAGE[0x12] // The name of the corresponding state variable before the modification:_buyLiquidityFee
+    uint256 private _buyDevFee; // STORAGE[0x13] // The name of the corresponding state variable before the modification:_buyDevFee
+    uint256 private _sellTotalFees; // STORAGE[0x14] // The name of the corresponding state variable before the modification:_sellTotalFees
+    uint256 private _sellCharityFee; // STORAGE[0x15] // The name of the corresponding state variable before the modification:_sellCharityFee
+    uint256 private _sellMarketingFee; // STORAGE[0x16] // The name of the corresponding state variable before the modification:_sellMarketingFee
+    uint256 private _sellLiquidityFee; // STORAGE[0x17] // The name of the corresponding state variable before the modification:_sellLiquidityFee
+    uint256 private _sellDevFee; // STORAGE[0x18] // The name of the corresponding state variable before the modification:_sellDevFee
+    uint256 private _tokensForCharity; // STORAGE[0x19] // The name of the corresponding state variable before the modification:_tokensForCharity
+    uint256 private _tokensForMarketing; // STORAGE[0x1a] // The name of the corresponding state variable before the modification:_tokensForMarketing
+    uint256 private _tokensForLiquidity; // STORAGE[0x1b] // The name of the corresponding state variable before the modification:_tokensForLiquidity
+    uint256 private _tokensForDev; // STORAGE[0x1c] // The name of the corresponding state variable before the modification:_tokensForDev
+    mapping (address => bool) private _isExcludedFromFees; // STORAGE[0x1d] // The name of the corresponding state variable before the modification:_isExcludedFromFees
+    mapping (address => bool) private _isExcludedMaxTransactionAmount; // STORAGE[0x1e] // The name of the corresponding state variable before the modification:__isExcludedMaxTransactionAmount
+    mapping (address => bool) private _automatedMarketMakerPairs; // STORAGE[0x1f] // The name of the corresponding state variable before the modification:_automatedMarketMakerPairs
+    bool private _limitsInEffect; // STORAGE[0xc] // The name of the corresponding state variable before the modification:_limitsInEffect
+    bool private _tradingActive; // STORAGE[0xc] // The name of the corresponding state variable before the modification:_tradingActive
+    bool private _swapEnabled; // STORAGE[0xc] // The name of the corresponding state variable before the modification:_swapEnabled
+    bool private _transferDelayEnabled; // STORAGE[0xe] // The name of the corresponding state variable before the modification:_transferDelayEnabled
+    address private _owner; // STORAGE[0x5] // The name of the corresponding state variable before the modification:_owner
+    address private _charityWallet; // STORAGE[0x6] // The name of the corresponding state variable before the modification:_charityWallet
+    address private _marketingWallet; // STORAGE[0x7] // The name of the corresponding state variable before the modification:_marketingWallet
+    address private _devWallet; // STORAGE[0x8] // The name of the corresponding state variable before the modification:_devWallet
+    uint256 private _lastTransferBlock; // STORAGE[0x5] // The name of the corresponding state variable before the modification:stor_5_20_20
+
+    // Events
+    event ExcludeFromFees(address indexed account, bool isExcluded);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiquidity);
+
+    function _SafeMul(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(b == 0 || a <= type(uint256).max / b, "Arithmetic Overflow"); // arithmetic overflow or underflow
+        return a * b;
+    }
+
+    function _SafeDiv(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(b > 0, "Division by zero"); // division by zero
+        return a / b;
+    }
+
+    function _transferLogic(uint256 amount, address from, address to) private {
+        // Check if transfer is not from the zero address
+        require(from != address(0), "ERC20: transfer from the zero address");
+        // Check if transfer is not to the zero address
+        require(to != address(0), "ERC20: transfer to the zero address");
+        
+        if (_limitsInEffect) {
+            // If the transfer is from an address other than _owner, apply limits
+            if (_owner != from) {
+                require(_limitsInEffect, "Transfer limits are in effect for this address.");
+                // Only enforce trading active if not the owner
+                require(_tradingActive, "Trading is not active.");
+                // Add further transfer limit logic as necessary...
+            }
+        }
+
+        // Perform token swaps if balance meets the threshold
+        if (_balanceOf[address(this)] >= _swapTokensAtAmount)
+            _performTokenSwap();
+        
+        // Execute token transfer
+        _performTransfer(amount, from, to);
+    }
+
+    function _performTransfer(uint256 amount, address from, address to) private {
+        // Ensure the sender has enough balance
+        require(_balanceOf[from] >= amount, "ERC20: transfer amount exceeds balance");
+        _balanceOf[from] -= amount; // Subtract from sender's balance
+        _balanceOf[to] += amount; // Add to receiver's balance
+        emit Transfer(from, to, amount); // Emit transfer event
+    }
+
+    function _performTokenSwap() private {
+        // Logic for performing token swap
+        // Can be expanded according to business requirements
+    }
+
+    // Transfer function with necessary checks
+    function transfer(address to, uint256 amount) public {
+        require(msg.data.length > 4 + 64, "Insufficient data length."); // msg.data is of type bytes
+        _transferLogic(amount, msg.sender, to);
+    }
+
+    // Transfer from another account with checks
+    function transferFrom(address from, address to, uint256 amount) public {
+        require(msg.data.length > 4 + 96, "Insufficient data length."); // msg.data is of type bytes
+        _transferLogic(amount, from, to);
+        require(_increaseAllowance[from][msg.sender] >= amount, "ERC20: transfer amount exceeds allowance"); // msg.sender is of type address
+        _increaseAllowance[from][msg.sender] -= amount; // msg.sender is of type address
+    }
+
+    // Approve function for allowances
+    function approve(address spender, uint256 amount) public returns (bool) {
+        // Ensure spender is not the zero address
+        require(spender != address(0), "ERC20: approve to the zero address");
+        _increaseAllowance[msg.sender][spender] = amount; // msg.sender is of type address
+        emit Approval(msg.sender, spender, amount); // Emit approval event
+        return true;
+    }
+
+    // Implement other necessary functions...
+}
+```

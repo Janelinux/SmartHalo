@@ -1,0 +1,77 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+// State Variables
+contract SampleContract {
+    mapping (uint256 => mapping (uint256 => uint256)) public allowances; // The name of the corresponding state variable before the modification:_allowance
+    mapping (uint256 => uint256) public balances; // The name of the corresponding state variable before the modification:_balanceOf
+    uint256 public totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    uint256[] public holderArray; // The name of the corresponding state variable before the modification:array_6
+    uint256[] public anotherArray; // The name of the corresponding state variable before the modification:array_7
+    mapping (uint256 => uint256) public ownerMapping; // The name of the corresponding state variable before the modification:owner_8
+    uint256 public contractOwner; // The name of the corresponding state variable before the modification:_owner
+    uint256 public decimals; // The name of the corresponding state variable before the modification:_decimals
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    function retrieveArrayData() private view returns (bytes memory, bytes memory) {
+        uint256 byteLength = calculateByteLength(holderArray.length); // Calculate the byte length based on array length
+
+        bytes memory resultArray = new bytes(byteLength); // Create a new bytes array of the calculated length
+        bytes memory dataPointer = resultArray; // Set the data pointer to the result bytes array
+        uint256 arrayLength = holderArray.length; // Get the length of holderArray
+
+        // Check if the length is zero
+        if (arrayLength == 0) {
+            return (resultArray, dataPointer);
+        } else if (arrayLength > 31) {
+            uint256 holderArrayPointer = uint256(uint160(address(holderArray))); // Get the pointer of the holderArray
+            // Loop through the holderArray to copy its contents into the bytes resultArray
+            for (uint256 i = 0; i < arrayLength; i++) { // Ensure the index is defined as uint256
+                assembly {
+                    mstore(add(dataPointer, mul(i, 0x20)), mload(add(holderArrayPointer, mul(i, 0x20))))
+                }
+            }
+            return (resultArray, dataPointer);
+        } else {
+            // Handle case where length is less than or equal to 31
+            // Encoding the length appropriately
+            bytes memory encodedLength = bytes(abi.encodePacked(arrayLength >> 8 << 8)); // Correctly encode the length as bytes
+            assembly {
+                mstore(dataPointer, mload(add(encodedLength, 0)))
+            }
+            return (resultArray, dataPointer);
+        }
+    }
+
+    function calculateByteLength(uint256 inputLength) private pure returns (uint256) {
+        uint256 adjustedLength = inputLength >> 1; // Halve the input length
+        if (inputLength % 2 == 0) {
+            adjustedLength = adjustedLength & 0x7f; // Adjusted length for even inputs
+        }
+        require(((inputLength % 2) - (adjustedLength < 32)) == 0, "Panic: Attempting to access incorrectly encoded storage byte array");
+        return adjustedLength;
+    }
+
+    // Function to get the 'name' as bytes
+    function name() public view returns (bytes memory) {
+        (bytes memory gatheredData, bytes memory dataPointer) = retrieveArrayData(); // Call function to retrieve array data
+        bytes memory nameBytes = new bytes(gatheredData.length); // Create new byte array for name
+        uint256 index = 0; // Initialize index
+
+        // Loop through the retrieved data to populate nameBytes
+        while (index < gatheredData.length) { // Ensure index is defined as uint256
+            nameBytes[index] = gatheredData[index]; // Copy over each byte
+            index++;
+        }
+        
+        // Append a zero byte at the end
+        nameBytes[nameBytes.length - 1] = 0; // Adding the terminator on the last valid index
+        return nameBytes;
+    }
+}
+```

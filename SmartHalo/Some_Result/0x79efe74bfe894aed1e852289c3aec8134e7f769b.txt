@@ -1,0 +1,147 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract NFTContract {
+    // State variables
+    mapping(uint256 => uint256[]) public ownerTokenIds;
+    uint256 public totalSupply;
+    uint256 public maxBatchSize;
+    string public name;
+    string public symbol;
+    mapping(uint256 => uint256[]) public tokenOfOwnerByIndex;
+    mapping(uint256 => uint256[]) public tokenApproval;
+    mapping(uint256 => uint256[]) public isApprovedForAll;
+    uint256 public nextOwnerToExplicitlySet;
+    mapping(uint256 => bool) public isApprovedForERC20Payments;
+    address[] public payableAddresses;
+    address[] public surchargePayableAddresses;
+    uint256[] public payableFees;
+    uint256[] public surchargePayableFees;
+    uint256 public payableAddressCount;
+    uint256 public surchargePayableAddressCount;
+    uint256 public ramppSurchargeBalance;
+    uint256 public ramppSurchargeFee;
+    uint256 public price;
+    address public owner;
+    uint256 public earlyMintPrice;
+    uint256 public earlyMintTokenIdCap;
+    bytes32 public merkleRoot;
+    uint256 public publicDropTime;
+    uint256 public allowlistDropTime;
+    string public baseTokenURI;
+    uint256 public maxWalletMints;
+    bool public onlyERC20MintingMode;
+    bool public usingEarlyMintIncentive;
+    bool public onlyAllowlistMode;
+    bool public enforcePublicDropTime;
+    bool public enforceAllowlistDropTime;
+    address public ramppAddress;
+    string public contractVersion;
+    bool public mintingOpen;
+    address public erc20Payable;
+
+    // Events
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Safe multiplication function
+    function safeMultiply(uint256 a, uint256 b) private pure returns (uint256) {
+        require(!(a > 0 && b > ~0 / a), "Overflow error on multiplication");
+        return a * b;
+    }
+
+    // Safe addition function
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= ~b, "Overflow error on addition");
+        return a + b;
+    }
+
+    // Check if the amount minted query is valid
+    function isMintedByOwner(uint256 tokenId, address ownerAddress) private view returns (bool) {
+        require(tokenId >= 1, "Amount must be greater than or equal to 1");
+        require(ownerAddress != address(0), "ERC721A: number minted query for the zero address");
+        address owner = ownerAddress;
+
+        // Determine mint count
+        uint256 mintCount = safeAdd(uint128(tokenApproval[owner][0] >> 128), tokenId);
+        return mintCount <= maxWalletMints;
+    }
+
+    // Approve transfer function
+    function transferFrom(address from, address to, uint256 tokenId) public {
+        require(msg.data.length - 4 >= 96, "Invalid data length");
+        require(from != address(0), "From address cannot be zero");
+        require(to != address(0), "To address cannot be zero");
+        approvalTransfer(tokenId, from, to);
+    }
+
+    // Internal function to check and execute the approval transfer
+    function approvalTransfer(uint256 tokenId, address from, address to) private {
+        address ownerCandidate = address(uint160(tokenOfOwnerByIndex[tokenId][0]));
+        bool isOwnerOrApproved = (msg.sender == ownerCandidate) || (address(uint160(tokenApproval[tokenId][0])) == msg.sender);
+        require(isOwnerOrApproved, "ERC721A: transfer caller is not owner nor approved");
+        require(address(uint160(tokenOfOwnerByIndex[tokenId][0])) == from, "ERC721A: transfer from incorrect owner");
+        require(to != address(0), "ERC721A: transfer to the zero address");
+
+        // Reset approval
+        tokenApproval ;
+
+        emit Approval(ownerCandidate, address(0), tokenId);
+
+        // Update owners
+        uint256 ownerCount = uint128(tokenApproval[from][0]);
+        require(ownerCount >= 1, "ERC721A: insufficient tokens");
+
+        tokenApproval[from][0] = ownerCount - 1;
+
+        uint256 newCount = safeAdd(uint128(tokenApproval[to][0]), 1);
+        tokenApproval[to][0] = newCount;
+
+        // Update the owner information
+        tokenOfOwnerByIndex[tokenId][0] = uint256(uint160(to)) | (tokenOfOwnerByIndex[tokenId][0] & ~uint256(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff)) | (uint64(block.timestamp) << 160);
+
+        emit Transfer(from, to, tokenId);
+    }
+
+    // Additional functions to maintain correctness based on the notes provided
+    function mintToMultipleERC20AL(address buyer, uint256 quantity, bytes32[] calldata merkleProof, address erc20Contract) public payable {
+        require(msg.data.length - 4 >= 128, "Data length insufficient");
+        require(buyer != address(0), "Invalid buyer address");
+        require(merkleProof.length <= 0xffffffffffffffff, "Invalid proof length");
+        require(4 + merkleProof.length + (merkleProof.length << 5) + 32 <= msg.data.length, "Data length insufficient");
+        require(erc20Contract != address(0), "Invalid ERC20 contract address");
+
+        // Ensure allowlist is active and minting is open
+        bool isAllowlistActive = onlyAllowlistMode && mintingOpen;
+        require(isAllowlistActive, "Allowlist minting is closed");
+        require(merkleRoot != bytes32(0), "Merkle root is not set!");
+
+        // Compute the hash for validation
+        bytes32 buyerHash = keccak256(abi.encodePacked(buyer));
+        require(verifyMerkleProof(merkleProof, buyerHash, merkleRoot), "Invalid Merkle proof");
+
+        require(quantity >= 1, "Must mint at least 1 token");
+        require(quantity <= maxBatchSize, "Cannot mint more than max mint per transaction");
+
+        // Other operations...
+    }
+
+    // Function to verify Merkle proof (placeholder, implementation needed)
+    function verifyMerkleProof(bytes32[] memory proof, bytes32 leaf, bytes32 root) private pure returns (bool) {
+        bytes32 hashedLeaf = leaf;
+        for (uint256 i = 0; i < proof.length; i++) {
+            if (hashedLeaf < proof[i]) {
+                hashedLeaf = keccak256(abi.encodePacked(hashedLeaf, proof[i]));
+            } else {
+                hashedLeaf = keccak256(abi.encodePacked(proof[i], hashedLeaf));
+            }
+        }
+        return hashedLeaf == root;
+    }
+
+    // Other necessary functions...
+}
+```

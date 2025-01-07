@@ -1,0 +1,74 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract TokenContract {
+    // State Variables
+    mapping(address => uint256) public ownerReflections;
+    mapping(address => mapping(address => uint256)) public allowances;
+    mapping(address => uint256) public reflectionMap;
+    mapping(address => uint256) public ownerTracker;
+
+    uint256 public totalReflections;
+    uint256 public totalSupply;
+    uint256 public maxTransactionAmount;
+    uint256 public maxWalletSize;
+    address public contractOwner;
+    address public manualSwapAddress;
+    address public zeroAddress;
+    bool public isManualSwapEnabled;
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    function safeSubtract(uint256 x, uint256 y, uint256 limit) private pure returns (uint256) {
+        require(y <= limit, "Subtraction overflow");
+        return limit - y;
+    }
+
+    function safeMultiply(uint256 x, uint256 y) private pure returns (uint256) {
+        if (y == 0) {
+            return 0;
+        }
+        require(x <= type(uint256).max / y, "Multiplication overflow");
+        return x * y;
+    }
+
+    function safeDivide(uint256 x, uint256 y) private pure returns (uint256) {
+        require(x != 0, "Division by zero");
+        return y / x;
+    }
+
+    function transfer(address recipient, uint256 amount) public {
+        require(msg.data.length >= 64, "Invalid data length");
+        require(recipient != address(0), "Transfer to the zero address");
+        _transfer(msg.sender, recipient, amount);
+    }
+
+    function _transfer(address from, address to, uint256 amount) private {
+        require(from != address(0), "Transfer from the zero address");
+        require(to != address(0), "Transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+
+        emit Transfer(from, to, amount);
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public {
+        require(msg.data.length >= 96, "Invalid data length");
+        require(sender != address(0), "Transfer from the zero address");
+        require(recipient != address(0), "Transfer to the zero address");
+
+        allowances[sender][msg.sender] = safeSubtract(allowances[sender][msg.sender], amount, allowances[sender][msg.sender]);
+        _transfer(sender, recipient, amount);
+    }
+
+    function approve(address spender, uint256 amount) public returns (bool) {
+        require(spender != address(0), "Approve to the zero address");
+        allowances[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+}
+```

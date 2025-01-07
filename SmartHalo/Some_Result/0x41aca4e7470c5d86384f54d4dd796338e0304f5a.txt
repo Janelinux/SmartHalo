@@ -1,0 +1,96 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedToken {
+    // State variables
+    mapping(address => uint256) private _balanceOf; // The name of the corresponding state variable before the modification: _balanceOf
+    mapping(address => mapping(address => uint256)) private _allowances; // The name of the corresponding state variable before the modification: _increaseAllowance
+    uint256 private _totalSupply; // The name of the corresponding state variable before the modification: _totalSupply
+    uint256[] private _transactionHistory; // The name of the corresponding state variable before the modification: array_3
+    uint256 private _maxTransactionAmount; // The name of the corresponding state variable before the modification: _maxTransactionAmount
+    uint256 private _swapTokensAtAmount; // The name of the corresponding state variable before the modification: _swapTokensAtAmount
+    uint256 private _maxWallet; // The name of the corresponding state variable before the modification: _maxWallet
+    uint256 private _lpBurnFrequency; // The name of the corresponding state variable before the modification: _lpBurnFrequency
+    uint256 private _lastLpBurnTime; // The name of the corresponding state variable before the modification: _lastLpBurnTime
+    uint256 private _manualBurnFrequency; // The name of the corresponding state variable before the modification: _manualBurnFrequency
+    uint256 private _lastManualLpBurnTime; // The name of the corresponding state variable before the modification: _lastManualLpBurnTime
+    mapping(address => bool) private _isExcludedFromFees; // The name of the corresponding state variable before the modification: _isExcludedFromFees
+    mapping(address => bool) private _automatedMarketMakerPairs; // The name of the corresponding state variable before the modification: _automatedMarketMakerPairs
+    address private _owner; // The name of the corresponding state variable before the modification: _owner
+    address private _devWallet; // The name of the corresponding state variable before the modification: _devWallet
+    address private _marketingWallet; // The name of the corresponding state variable before the modification: _marketingWallet
+    bool private _lpBurnEnabled; // The name of the corresponding state variable before the modification: _lpBurnEnabled
+    bool private _tradingActive; // The name of the corresponding state variable before the modification: _tradingActive
+    bool private _transferDelayEnabled; // The name of the corresponding state variable before the modification: _transferDelayEnabled
+
+    // Events
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiqudity);
+    event AutoNukeLP();
+    event ManualNukeLP();
+
+    // Safe math functions
+    function _safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a + b >= a, "SafeMath: addition overflow");
+        return a + b;
+    }
+
+    function _safeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b <= a, "SafeMath: subtraction overflow");
+        return a - b;
+    }
+
+    function _safeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        if (a == 0) return 0;
+        require(a * b / a == b, "SafeMath: multiplication overflow");
+        return a * b;
+    }
+
+    function _safeDiv(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b > 0, "SafeMath: division by zero");
+        return a / b;
+    }
+
+    // Transfer function
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(_balanceOf[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
+
+        _balanceOf[msg.sender] = _safeSub(_balanceOf[msg.sender], amount);
+        _balanceOf[recipient] = _safeAdd(_balanceOf[recipient], amount);
+        emit Transfer(msg.sender, recipient, amount);
+        return true;
+    }
+
+    // TransferFrom function
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(_balanceOf[sender] >= amount, "ERC20: transfer amount exceeds balance");
+        require(_allowances[sender][msg.sender] >= amount, "ERC20: transfer amount exceeds allowance");
+
+        _balanceOf[sender] = _safeSub(_balanceOf[sender], amount);
+        _balanceOf[recipient] = _safeAdd(_balanceOf[recipient], amount);
+        _allowances[sender][msg.sender] = _safeSub(_allowances[sender][msg.sender], amount);
+        
+        emit Transfer(sender, recipient, amount);
+        return true;
+    }
+
+    // Approve function
+    function approve(address spender, uint256 amount) public returns (bool) {
+        require(spender != address(0), "ERC20: approve to the zero address");
+        
+        _allowances[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
+    // BalanceOf function
+    function balanceOf(address account) public view returns (uint256) {
+        return _balanceOf[account];
+    }
+}
+```

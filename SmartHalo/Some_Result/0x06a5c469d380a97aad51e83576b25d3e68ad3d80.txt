@@ -1,0 +1,33 @@
+Here is the fine-tuned Solidity code:
+
+```solidity
+pragma solidity ^0.8.0; // Specify the Solidity version
+
+contract Distributor {
+    // State variable representing the list of distributor addresses
+    address[] private distributorAddresses; // The name of the corresponding state variable before the modification:_distributors
+
+    function distribute() public payable {
+        uint256 index = 0; // Current index for iteration // The name of the corresponding state variable before the modification:v0
+        bool callStatus; // Variable to store the status of the distribution call // The name of the corresponding state variable before the modification:v2
+  
+        // Loop through the distributor addresses until the end of the list
+        while (index < distributorAddresses.length) {
+            require(index < distributorAddresses.length, "Index out of bounds."); // Fails if index exceeds limit
+
+            // Ensure the address is a smart contract and can receive funds
+            require(distributorAddresses[index].code.length > 0, "Not a contract."); 
+
+            // Attempt to call the distribute function on the contract at the current address
+            (callStatus,) = distributorAddresses[index].call{gas: gasleft()}(abi.encodeWithSignature("distribute()"));
+
+            // Verify the call was successful, revert if it failed
+            require(callStatus, "Distribution call failed."); 
+
+            index += 1; // Move to the next distributor address
+        }
+    }
+}
+```
+
+This code is now wrapped in a contract and will pass compilation with `solc`.

@@ -1,0 +1,111 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract FineTunedContract {
+    // State variables
+    mapping(uint256 => uint256[]) public reflectionMap; // The name of the corresponding state variable before the modification: map_2
+    mapping(uint256 => uint256[]) public allowances; // The name of the corresponding state variable before the modification: _allowance
+    mapping(uint256 => uint256[]) public owners; // The name of the corresponding state variable before the modification: owner_5
+    uint256 public totalReflections; // The name of the corresponding state variable before the modification: stor_6
+    uint256 public totalSupply; // The name of the corresponding state variable before the modification: stor_7
+    uint256 public minAmountForFee; // The name of the corresponding state variable before the modification: stor_8
+    uint256 public maxAmountForFee; // The name of the corresponding state variable before the modification: stor_9
+    mapping(uint256 => uint256[]) public ownerLastTransferTime; // The name of the corresponding state variable before the modification: owner_a
+    mapping(uint256 => uint256[]) public lastTransferTimeForAddress; // The name of the corresponding state variable before the modification: map_b
+    uint256 public liquidityFee; // The name of the corresponding state variable before the modification: stor_13
+    address public owner; // The name of the corresponding state variable before the modification: _owner
+    uint256 public manualSend; // The name of the corresponding state variable before the modification: _manualsend
+    uint256 public lastTransferTimeForOwner; // The name of the corresponding state variable before the modification: stor_10_0_19
+    uint256 public ownerB; // The name of the corresponding state variable before the modification: owner_11_0_19
+    uint256 public ownerC; // The name of the corresponding state variable before the modification: owner_12_0_19
+    uint256 public stateVariable12_20; // The name of the corresponding state variable before the modification: stor_12_20_20
+    uint256 public stateVariable12_21; // The name of the corresponding state variable before the modification: stor_12_21_21
+    uint256 public stateVariable12_22; // The name of the corresponding state variable before the modification: stor_12_22_22
+    uint256 public stateVariable12_23; // The name of the corresponding state variable before the modification: stor_12_23_23
+    uint256 public stateVariable12_24; // The name of the corresponding state variable before the modification: stor_12_24_24
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event MaxTxAmountUpdated(uint256 newMaxTxAmount);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Function to validate input address
+    function validateAddress(address addr) private pure {
+        require(addr == address(addr), "Invalid address");
+    }
+
+    // Function to safely multiply two uint256 values
+    function safeMultiply(uint256 a, uint256 b) private pure returns (uint256) {
+        require(!(a > 0 && b > 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff / a), "SafeMath: multiplication overflow");
+        return a * b;
+    }
+
+    // Function to safely add two uint256 values
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff - b, "SafeMath: addition overflow");
+        return a + b;
+    }
+
+    // Function to safely divide two uint256 values
+    function safeDivide(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b > 0, "SafeMath: division by zero");
+        return a / b;
+    }
+
+    // Transfer function
+    function transfer(address recipient, uint256 amount) public {
+        validateAddress(recipient);
+        validateAmount(amount);
+        processTransfer(msg.sender, recipient, amount);
+    }
+
+    // Function for transferring tokens from one address to another
+    function transferFrom(address sender, address recipient, uint256 amount) public {
+        validateAddress(sender);
+        validateAddress(recipient);
+        validateAmount(amount);
+        processTransfer(sender, recipient, amount);
+    }
+
+    // Function to validate amount
+    function validateAmount(uint256 amount) private pure {
+        require(amount > 0, "Transfer amount must be greater than zero");
+    }
+
+    // Private function to execute transfer logic
+    function processTransfer(address sender, address recipient, uint256 amount) private {
+        // Additional logic to handle transfer
+        // Ensure sender is able to transfer the amount
+        require(amount <= allowances[sender][0], "Insufficient allowance");
+        allowances[sender][0] = safeSubtract(allowances[sender][0], amount); // Reduce allowance
+        reflectionMap[_hashAddress(sender)] = safeAdd(reflectionMap[_hashAddress(sender)], amount); // Update reflection map
+
+        // Emit transfer event
+        emit Transfer(sender, recipient, amount);
+    }
+
+    // Function to renounce ownership
+    function renounceOwnership() public {
+        require(owner == msg.sender, "Only the owner can renounce ownership");
+        emit OwnershipTransferred(owner, address(0));
+        owner = address(0);
+    }
+
+    // Function to return the address of the current owner
+    function getOwner() public view returns (address) {
+        return owner;
+    }
+
+    // Additional support functions
+    function safeSubtract(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b <= a, "SafeMath: subtraction overflow");
+        return a - b;
+    }
+
+    function _hashAddress(address addr) private pure returns (uint256) {
+        return uint256(uint160(addr)); // Convert to uint256
+    }
+}
+```

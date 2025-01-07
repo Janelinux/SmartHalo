@@ -1,0 +1,76 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract TokenLockup {
+
+    // State Variables
+    mapping(uint256 => uint256[5]) contractData; // STORAGE[0x1]
+    address owner; // STORAGE[0x0] bytes 0 to 19
+
+    // Events
+    event TLCERC20New(bytes32 indexed contractHash, address indexed creator, address tokenAddress, uint256 tokenAmount, uint256 unlockTime);
+    event TLCERC20Withdraw(bytes32 indexed contractHash);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function createNewContract(uint256 unlockTime, address tokenAddress, uint256 tokenAmount) public payable returns (bytes32) { 
+        // Ensure that the function is called with enough data
+        require(msg.data.length - 4 >= 96, "Insufficient data");
+        
+        // Check that the caller is the owner
+        require(msg.sender == owner, "Ownable: caller is not the owner");
+        
+        // Validate token amount
+        require(tokenAmount > 0, "token amount must be > 0");
+        
+        // Check if the token address has code (is a contract)
+        require(tokenAddress.code.length > 0, "Token address must be a contract");
+
+        // Check allowance of tokens
+        (bool isAllowanceValid, bytes memory allowanceData) = tokenAddress.call(abi.encodeWithSignature("allowance(address,address)", msg.sender, address(this)));
+        require(isAllowanceValid, "Allowance call failed");
+        uint256 allowanceAmount = abi.decode(allowanceData, (uint256));
+        
+        // Ensure there is enough allowance
+        require(allowanceAmount >= tokenAmount, "token allowance must be >= amount");
+        
+        // Ensure unlock time is in the future
+        require(unlockTime > block.timestamp, "timelock time must be in the future");
+
+        // Create a unique contract hash
+        bytes32 contractHash = keccak256(abi.encodePacked(msg.sender, tokenAddress, tokenAmount, unlockTime));
+
+        // Check if the contract already exists
+        require(contractData[uint256(contractHash)][0] == 0, "Contract already exists");
+
+        // Execute the token transfer
+        (bool isTransferSuccessful,) = tokenAddress.call(abi.encodeWithSignature("transferFrom(address,address,uint256)", msg.sender, address(this), tokenAmount));
+        require(isTransferSuccessful, "transferFrom sender to this failed");
+
+        // Store contract data
+        contractData[uint256(contractHash)][0] = uint256(uint160(msg.sender)); // Storing sender address as uint256
+        contractData[uint256(contractHash)][1] = uint256(uint160(tokenAddress)); // Storing token address as uint256
+        contractData[uint256(contractHash)][2] = tokenAmount; // Storing token amount
+        contractData[uint256(contractHash)][3] = unlockTime; // Storing unlock time
+        contractData[uint256(contractHash)][4] = 0; // Placeholder for future use
+
+        // Emit the event for contract creation
+        emit TLCERC20New(contractHash, msg.sender, tokenAddress, tokenAmount, unlockTime);
+        
+        // Return the contract hash as confirmation
+        return contractHash;
+    }
+
+    // Function to transfer ownership (not originally included in the code provided)
+    function transferOwnership(address newOwner) public {
+        require(msg.sender == owner, "Ownable: caller is not the owner");
+        require(newOwner != address(0), "New owner is the zero address");
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
+    }
+}
+```

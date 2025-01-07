@@ -1,0 +1,80 @@
+```solidity
+pragma solidity ^0.8.17;
+
+contract TokenContract {
+    // State variables with meaningful names and annotations
+    uint256[] public tokenSupply; // STORAGE[0x0] //The name of the corresponding state variable before the modification:_totalSupply
+    uint256[] public mintedTokens; // STORAGE[0x1] //The name of the corresponding state variable before the modification:array_1
+    mapping (uint256 => uint256) public approval; // STORAGE[0x5] //The name of the corresponding state variable before the modification:_approve
+    mapping (uint256 => mapping (uint256 => uint256)) public approvedForAll; // STORAGE[0x6] //The name of the corresponding state variable before the modification:_isApprovedForAll
+    uint256 public maxTokenSupply; // STORAGE[0x8] //The name of the corresponding state variable before the modification:_maxSupply
+    uint256 public tokenPrice; // STORAGE[0x9] //The name of the corresponding state variable before the modification:_price
+    uint256[] public tokenMetadata; // STORAGE[0xb] //The name of the corresponding state variable before the modification:_tokenURI
+    mapping (uint256 => uint256) public mintedCount; // STORAGE[0xc] //The name of the corresponding state variable before the modification:_mintedCount
+    uint256 private placeholderStorage; // STORAGE[0x2] bytes 0 to 0 //Unchanged variable
+    address private ownerAddress; // STORAGE[0x7] bytes 0 to 19 //The name of the corresponding state variable before the modification:_owner
+    uint256 private statusStorage; // STORAGE[0xa] bytes 0 to 19 //Unchanged variable
+    bool public isPaused; // STORAGE[0xa] bytes 20 to 20 //The name of the corresponding state variable before the modification:_isPaused
+
+    // Events
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Safe mathematical functions
+    function safeDiv(uint256 numerator, uint256 denominator) private pure returns (uint256) {
+        require(denominator != 0, "Error: Division by zero"); // updated error message
+        return numerator / denominator;
+    }
+
+    function safeSub(uint256 minuend, uint256 subtrahend) private pure returns (uint256) {
+        require(minuend >= subtrahend, "Error: Arithmetic underflow");
+        return minuend - subtrahend;
+    }
+
+    function safeAdd(uint256 addend1, uint256 addend2) private pure returns (uint256) {
+        require(addend1 + addend2 >= addend1, "Error: Arithmetic overflow");
+        return addend1 + addend2;
+    }
+
+    // Function to return token URI
+    function tokenURI(uint256 tokenId) public view returns (string memory) {
+        require(tokenId < tokenSupply.length, "ERC721Metadata: URI query for nonexistent token");
+        require(msg.data.length >= 68, "Error: Invalid call data length"); // Ensure appropriate length
+
+        uint256 length = tokenMetadata.length; // Type consistency: uint256 length is used directly from uint256
+        if (length > 0) {
+            uint256 digitCount = 0;
+            
+            if (tokenId != 0) {
+                uint256 tempId = tokenId; // Use uint256 for type consistency
+                uint256 copyTempId = tempId; // For calculating the number of digits
+
+                // Calculate the number of digits in tokenId
+                while (copyTempId != 0) {
+                    copyTempId /= 10; // Integer division
+                    digitCount++;
+                }
+
+                require(digitCount <= 78, "Error: Exceeds max length for memory allocation"); // maximum value for 32 bytes
+                bytes memory uriBytes = new bytes(digitCount);
+                copyTempId = tokenId;
+
+                while (copyTempId != 0) {
+                    uriBytes[--digitCount] = bytes1(uint8(48 + (copyTempId % 10)));
+                    copyTempId /= 10; // Integer division
+                }
+
+                // Generate the full URI
+                string memory jsonExtension = ".json";
+                return string(abi.encodePacked(string(uriBytes), jsonExtension));
+            } else {
+                return "Default Metadata URI";
+            }
+        }
+        
+        return "No Metadata Available";
+    }
+}
+```

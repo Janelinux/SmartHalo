@@ -1,0 +1,106 @@
+Thank you for the additional details regarding the function interactions with the state variables. Based on this information, the annotations previously provided remain relevant. However, I will clarify the context in which some of these state variables are used, specifically for those that are read or written from various functions. Let's also maintain the same contract attribute annotations as before:
+
+```solidity
+mapping (uint256 => uint256) _balanceOf; // STORAGE[0x1]
+// Contract Attribute: others - Mapping for user balances
+// Used in function balanceOf to retrieve balance for an address
+
+mapping (uint256 => mapping (uint256 => uint256)) _allowance; // STORAGE[0x2]
+// Contract Attribute: others - Mapping for allowances
+// Used in function 0x11d3 to set allowance for a spender
+
+mapping (uint256 => uint256) _excludedFromMaxWallet_; // STORAGE[0x3]
+// Contract Attribute: limit - Exemptions from maximum wallet limit
+// Used in function ExcludedFromMaxWallet_ to check if an address is excluded
+
+mapping (uint256 => uint256) _ethLiqudityPair; // STORAGE[0x4]
+// Contract Attribute: router - Mapping for liquidity pairs
+// Used in function EthLiqudityPair to check if a pair exists
+
+mapping (uint256 => uint256) _excludedFromTx_; // STORAGE[0x5]
+// Contract Attribute: limit - Exemptions from transaction limits
+// Used in function ExcludedFromTx_ to check if an address is excluded
+
+mapping (uint256 => uint256) _excludedFromTax_; // STORAGE[0x6]
+// Contract Attribute: fees - Exemptions from tax
+// Used in function ExcludedFromTax_ to check if an address is excluded
+
+uint256[] array_8; // STORAGE[0x8]
+// Contract Attribute: others - General array for contract usage
+
+uint256[] array_9; // STORAGE[0x9]
+// Contract Attribute: others - General array for contract usage
+
+uint256 __tTotal; // STORAGE[0xb]
+// Contract Attribute: asset - Total supply of assets
+
+uint256 stor_c; // STORAGE[0xc]
+// Contract Attribute: others - General storage variable
+
+uint256 stor_d; // STORAGE[0xd]
+// Contract Attribute: others - General storage variable
+
+uint256 _buyFEE; // STORAGE[0xe]
+// Contract Attribute: fees - Buy transaction fee
+// Used in function BuyFEE to read the buy fee amount
+
+uint256 _sellFEE; // STORAGE[0xf]
+// Contract Attribute: fees - Sell transaction fee
+// Used in function SellFEE to read the sell fee amount
+
+uint256 stor_10; // STORAGE[0x10]
+// Contract Attribute: others - General storage variable
+
+uint256 stor_11; // STORAGE[0x11]
+// Contract Attribute: others - General storage variable
+
+uint256 stor_12; // STORAGE[0x12]
+// Contract Attribute: others - General storage variable
+
+uint256 __maxWalletToken; // STORAGE[0x13]
+// Contract Attribute: limit - Maximum allowed tokens in a wallet
+// Used in function _maxWalletToken to retrieve its value
+
+uint256 __maxTxAmount; // STORAGE[0x15]
+// Contract Attribute: limit - Maximum transaction amount
+// Used in function _maxTxAmount to retrieve its value and also written to set a new limit
+
+uint256 _owner; // STORAGE[0x0] bytes 0 to 19
+// Contract Attribute: address - Owner of the contract
+
+uint256 _decimals; // STORAGE[0xa] bytes 0 to 0
+// Contract Attribute: others - Decimals for the token
+
+uint256 __TEAM_MARKETING_; // STORAGE[0x7] bytes 0 to 19
+// Contract Attribute: address - Marketing team wallet address
+
+uint256 _uniswapV2Router; // STORAGE[0x17] bytes 0 to 19
+// Contract Attribute: router - Uniswap router address for swaps
+
+uint256 _uniswapV2Pair; // STORAGE[0x19] bytes 0 to 19
+// Contract Attribute: router - Uniswap pair address for liquidity
+
+uint256 _inSwapAndLiquify; // STORAGE[0x19] bytes 20 to 20
+// Contract Attribute: flag - Indicates if a swap and liquify process is underway
+
+uint256 _swapAndLiquifyEnabled; // STORAGE[0x19] bytes 21 to 21
+// Contract Attribute: flag - Indicates if the swap and liquify feature is enabled
+
+uint256 stor_19_22_22; // STORAGE[0x19] bytes 22 to 22
+// Contract Attribute: others - General storage variable
+
+// Events
+OwnershipTransferred(address, address);
+Approval(address, address, uint256);
+Transfer(address, address, uint256);
+
+function _maxTxAmount() public nonPayable { 
+    return __maxTxAmount; // Uses the limit attribute
+}
+
+function _maxWalletToken() public nonPayable {
+    return __maxWalletToken; // Uses the limit attribute
+}
+```
+
+In this version, I've included comments indicating where each state variable is utilized within the corresponding functions, providing further clarity on how they contribute to the contract's functionality.

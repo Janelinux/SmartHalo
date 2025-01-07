@@ -1,0 +1,81 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract ConversionContract {
+    uint256 public availableMxxAmount; // STORAGE[0x3] //The name of the corresponding state variable before the modification:_availableMxxAmt
+    uint256 public index; // STORAGE[0x4] //The name of the corresponding state variable before the modification:_index
+    mapping (uint256 => uint256[]) public allConversions; // STORAGE[0x5] //The name of the corresponding state variable before the modification:_allConversions
+    uint256 public feePercentage; // STORAGE[0x6] //The name of the corresponding state variable before the modification:_feePcnt
+    address public owner; // STORAGE[0x0] //The name of the corresponding state variable before the modification:_owner
+    address public mxxAddress; // STORAGE[0x1] //The name of the corresponding state variable before the modification:_mXX_ADDRESS
+    address public burnAddress; // STORAGE[0x2] //The name of the corresponding state variable before the modification:_bURN_ADDRESS
+    uint256 public depositFlag; // STORAGE[0x0] //The name of the corresponding state variable before the modification:_depositForConversion
+
+    // Events
+    event ConversionRefunded(uint256);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event ConversionCompleted(uint256);
+    event NewConversion(uint256 indexed conversionIndex, address indexed recipient, address indexed converter, uint256 amount, uint256 fee, uint256 timestamp);
+
+    function depositForConversion(address recipient, uint256 amount) public payable {
+        // Validate input length
+        require(msg.data.length >= 4 + 64, "Invalid data length");
+        require(depositFlag == 0, "ReentrancyGuard: reentrant call");
+        depositFlag = 1; // Set the deposit flag to prevent reentrancy
+
+        // Validate amount
+        require(amount > 0, "Amount cannot be 0");
+        require(amount <= availableMxxAmount, "Amount exceeded");
+        require(recipient != address(0), "Invalid BSC address");
+
+        // Check if mXX contract address is valid
+        verifyingValidity(mxxAddress);
+
+        // Transfer tokens from sender to this contract
+        (bool success, bytes memory returnData) = mxxAddress.call(
+            abi.encodeWithSignature("transferFrom(address,address,uint256)", msg.sender, address(this), amount)
+        );
+
+        require(success, "SafeERC20: low-level call failed");
+
+        // Handle return data and store conversion details
+        handleReturnData(returnData);
+        storeConversionDetails(recipient, amount);
+
+        // Update available amount and flags
+        updateAvailableAmount(amount);
+        
+        // Emit event for new conversion
+        emit NewConversion(index, msg.sender, recipient, amount, feePercentage, block.timestamp);
+    }
+
+    function verifyingValidity(address contractAddress) private view {
+        bytes32 codeHash = extcodehash(contractAddress);
+        require(codeHash != bytes32(0), "SafeERC20: call to non-contract");
+    }
+
+    function handleReturnData(bytes memory returnData) private {
+        if (returnData.length > 0) {
+            require(returnData.length >= 32, "Invalid return data length");
+            require(abi.decode(returnData, (bool)), "SafeERC20: ERC20 operation did not succeed");
+        }
+    }
+
+    function storeConversionDetails(address recipient, uint256 amount) private {
+        allConversions ;
+        allConversions[index][0] = amount; // amount of tokens transferred
+        allConversions[index][1] = feePercentage; // fee percentage applied
+        allConversions[index][2] = uint256(uint160(msg.sender)); // save sender address
+        allConversions[index][3] = (uint256(uint160(recipient)) & ~uint256(0xffffffffffff0000000000000000000000000000000000000000)) | 
+                                     (block.timestamp & 0xffffffffffff) << 160; // store conversion timestamp and recipient address
+        allConversions[index][4] = 1 | (~uint256(0xff) & allConversions[index][4]); // Update status of conversion
+        
+        index++; // Move to the next index for future conversions
+    }
+
+    function updateAvailableAmount(uint256 amount) private {
+        availableMxxAmount -= amount; // consistent type check with previous check on amount
+        depositFlag = 0; // Set the deposit flag to false
+    }
+}
+```

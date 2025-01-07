@@ -1,0 +1,34 @@
+Thank you for the additional notes regarding the specific usage of the state variables in different functions. Based on this information, we can confirm the contract attributes for the state variables previously identified, ensuring accuracy in how they relate to their usage in the functions mentioned.
+
+Here is the updated annotation of the state variables, incorporating the functions that utilize them:
+
+```solidity
+mapping (uint256 => uint256) _balanceOf; // STORAGE[0x1] // Contract Attribute: others (holds balances of users, accessed in [balanceOf])
+mapping (uint256 => mapping (uint256 => uint256)) _allowance; // STORAGE[0x2] // Contract Attribute: others (holds allowances for users, accessed in [0x11d3])
+mapping (uint256 => uint256) _excludedFromMaxWallet_; // STORAGE[0x3] // Contract Attribute: limit (exemption from max wallet limit, accessed in [ExcludedFromMaxWallet_])
+mapping (uint256 => uint256) _ethLiqudityPair; // STORAGE[0x4] // Contract Attribute: router (liquidity pair address, accessed in [EthLiqudityPair])
+mapping (uint256 => uint256) _excludedFromTx_; // STORAGE[0x5] // Contract Attribute: limit (exemption from max transaction limit, accessed in [ExcludedFromTx_])
+mapping (uint256 => uint256) _excludedFromTax_; // STORAGE[0x6] // Contract Attribute: others (exemption from taxes, accessed in [ExcludedFromTax_])
+uint256[] array_8; // STORAGE[0x8] // Contract Attribute: others (generic storage)
+uint256[] array_9; // STORAGE[0x9] // Contract Attribute: others (generic storage)
+uint256 __tTotal; // STORAGE[0xb] // Contract Attribute: asset (total supply of tokens)
+uint256 stor_c; // STORAGE[0xc] // Contract Attribute: others (generic storage)
+uint256 stor_d; // STORAGE[0xd] // Contract Attribute: others (generic storage)
+uint256 _buyFEE; // STORAGE[0xe] // Contract Attribute: fees (buy transaction fee, accessed in [BuyFEE])
+uint256 _sellFEE; // STORAGE[0xf] // Contract Attribute: fees (sell transaction fee, accessed in [SellFEE])
+uint256 stor_10; // STORAGE[0x10] // Contract Attribute: others (generic storage)
+uint256 stor_11; // STORAGE[0x11] // Contract Attribute: others (generic storage)
+uint256 stor_12; // STORAGE[0x12] // Contract Attribute: others (generic storage)
+uint256 __maxWalletToken; // STORAGE[0x13] // Contract Attribute: limit (max wallet token limit, accessed in [_maxWalletToken])
+uint256 __maxTxAmount; // STORAGE[0x15] // Contract Attribute: limit (max transaction amount, accessed in [_maxTxAmount])
+uint256 _owner; // STORAGE[0x0] bytes 0 to 19 // Contract Attribute: address (owner of the contract)
+uint256 _decimals; // STORAGE[0xa] bytes 0 to 0 // Contract Attribute: others (decimal places for the token)
+uint256 __TEAM_MARKETING_; // STORAGE[0x7] bytes 0 to 19 // Contract Attribute: address (team marketing address)
+uint256 _uniswapV2Router; // STORAGE[0x17] bytes 0 to 19 // Contract Attribute: router (Uniswap V2 router address)
+uint256 _uniswapV2Pair; // STORAGE[0x19] bytes 0 to 19 // Contract Attribute: router (Uniswap V2 pair address)
+uint256 _inSwapAndLiquify; // STORAGE[0x19] bytes 20 to 20 // Contract Attribute: flag (status of swap and liquify)
+uint256 _swapAndLiquifyEnabled; // STORAGE[0x19] bytes 21 to 21 // Contract Attribute: flag (if swap and liquify is enabled)
+uint256 stor_19_22_22; // STORAGE[0x19] bytes 22 to 22 // Contract Attribute: others (generic storage)
+```
+
+In this updated annotation, I've included references to the functions that read from or write to each respective state variable, which enhances clarity regarding their roles and usages.

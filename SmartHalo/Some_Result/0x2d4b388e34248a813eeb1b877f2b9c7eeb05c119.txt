@@ -1,0 +1,52 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+// Optimized contract with meaningful variable names and types
+contract OptimizedToken {
+    // State variables with new names and types
+    uint256 public totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    string public name; // The name of the corresponding state variable before the modification:_name
+    string public symbol; // The name of the corresponding state variable before the modification:_symbol
+    uint256 public version; // The name of the corresponding state variable before the modification:_version
+    uint256 public lockedUntilBlock; // The name of the corresponding state variable before the modification:_lockedUntilBlock
+    mapping(address => uint256) public balanceOf; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping(address => mapping(address => uint256)) public allowance; // The name of the corresponding state variable before the modification:_allowance
+    uint8 public decimals; // The name of the corresponding state variable before the modification:_decimals
+    address public owner; // The name of the corresponding state variable before the modification:_owner
+    address public minter; // The name of the corresponding state variable before the modification:_minter
+
+    // Events
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event BlockLockSet(uint256 lockedUntilBlock);
+    event Mint(address indexed to, uint256 value, uint256 totalSupply);
+    event Burn(address indexed from, uint256 value, uint256 totalSupply);
+    event NewOwner(address indexed newOwner);
+    event NewMinter(address indexed newMinter);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Function to mint new tokens
+    function mint(address recipient, uint256 amount) public {
+        // Ensure that the function is called with sufficient data
+        require(msg.data.length - 4 >= 64, "Insufficient message data"); // msg.data is of type bytes
+        
+        // Check if the sender is the minter or the owner and whether minting is allowed
+        bool isMinter = (msg.sender == minter); // msg.sender is of type address
+        bool isOwner = (msg.sender == owner); // msg.sender is of type address
+        bool canMint = isMinter || (block.number >= lockedUntilBlock && isOwner); // permissions check
+
+        require(canMint, "Forbidden: Not authorized to mint");
+
+        // Check for minting limits to prevent overflow
+        require(totalSupply + amount > totalSupply, "Minting exceeds capacity"); // ensure we can mint without overflow
+
+        // Update balances and total supply
+        balanceOf[recipient] += amount; // Increase the recipient's balance
+        totalSupply += amount; // Update the total supply
+
+        // Emit events for successful minting and transfer
+        emit Mint(recipient, amount, totalSupply);
+        emit Transfer(address(0), recipient, amount);
+    }
+}
+```

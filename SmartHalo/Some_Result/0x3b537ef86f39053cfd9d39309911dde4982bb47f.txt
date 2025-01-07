@@ -1,0 +1,24 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract ExampleContract {
+    // State variables with clear naming and appropriate types
+    mapping (uint256 => uint256[]) private excludedAccounts; // STORAGE[0x1]
+    mapping (uint256 => uint256[]) private balances; // STORAGE[0x2]
+    mapping (uint256 => uint256[]) private allowances; // STORAGE[0x3]
+    mapping (uint256 => uint256) private timestamps; // STORAGE[0x4]
+    mapping (uint256 => uint256) private isExcluded; // STORAGE[0x5]
+
+    uint256[] private includedAccounts; // STORAGE[0x6]
+    uint256 private timestampStorage; // STORAGE[0x9]
+    uint256 private totalFees; // STORAGE[0xa]
+    uint256[] private tokenName; // STORAGE[0xc]
+    uint256[] private tokenSymbol; // STORAGE[0xd]
+    uint256 private rSupply; // STORAGE[0xf]
+    uint256 private tSupply; // STORAGE[0x10]
+    address private owner; // STORAGE[0x0]
+    uint256 private storB; // STORAGE[0xb]
+    uint8 private decimals;
+}
+```

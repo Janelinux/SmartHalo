@@ -1,0 +1,73 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.9;
+
+// Improved variable names and types
+contract Token {
+    mapping(uint256 => uint256) private balanceOf; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping(uint256 => mapping(uint256 => uint256)) private allowance; // The name of the corresponding state variable before the modification:_allowance
+    uint256 private totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    uint256[] private tokenArray3; // The name of the corresponding state variable before the modification:array_3
+    uint256[] private tokenArray4; // The name of the corresponding state variable before the modification:array_4
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Function to retrieve the bytes representation of the tokenArray3
+    function getTokenArrayBytes() private view returns (bytes memory) {
+        uint256 adjustedLength = getAdjustedLength(tokenArray3.length); // Using a more descriptive function name
+        bytes memory byteArray = new bytes(adjustedLength);
+        uint256 bytePointer = 0;
+
+        if (adjustedLength == 0) {
+            return byteArray;
+        } else if (adjustedLength > 31) {
+            uint256 dataPtr; // The pointer to storage data
+            assembly {
+                dataPtr := sload(tokenArray3.slot) // Get pointer to storage data
+            }
+            while (bytePointer < adjustedLength) {
+                assembly {
+                    mstore(add(byteArray, add(bytePointer, 32)), sload(dataPtr)) // Load from storage
+                }
+                dataPtr += 1;
+                bytePointer += 32; // Increment byte pointer by 32, because we're working with 32-byte slots
+            }
+            return byteArray;
+        } else {
+            assembly {
+                mstore(add(byteArray, 0x20), shl(8, tokenArray3.length)) // Store length adjusted for 8 bytes
+            }
+            return byteArray;
+        }
+    }
+
+    // Helper function to get an adjusted length, ensuring it is within specified bounds
+    function getAdjustedLength(uint256 inputLength) private pure returns (uint256) {
+        uint256 adjustedLength = inputLength >> 1;
+        if (inputLength & 0x1 == 0) {
+            adjustedLength = adjustedLength & 0x7f;
+        }
+        // Panic condition checks the adjusted length and validates storage access
+        require(inputLength & 0x1 != adjustedLength && adjustedLength < 32, "Invalid storage access"); 
+        return adjustedLength;
+    }
+
+    // Public function to get the name as a bytes array
+    function name() public view returns (bytes memory) {
+        bytes memory tokenBytes = getTokenArrayBytes();
+        bytes memory resultBytes = new bytes(tokenBytes.length);
+        uint256 byteIndex = 0;
+
+        while (byteIndex < tokenBytes.length) {
+            resultBytes[byteIndex] = tokenBytes[byteIndex]; // Copy the bytes
+            byteIndex++;
+        }
+
+        if (byteIndex > tokenBytes.length) {
+            resultBytes[tokenBytes.length] = 0; // Null-terminate if needed
+        }
+        return resultBytes;
+    }
+}
+```

@@ -1,0 +1,89 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract Token {
+    // Mapping structures to manage balances and allowances for token holders
+    mapping (address => uint256) private _balances; // STORAGE[0x2] 
+    mapping (address => mapping (address => uint256)) private _allowances; // STORAGE[0x3]
+
+    uint256 private _totalSupply; // STORAGE[0x6]
+    string private _name; // STORAGE[0x7]
+    string private _symbol; // STORAGE[0x8]
+
+    uint256 private _reflectionTotal; // STORAGE[0xa]
+    uint8 private _decimals; // STORAGE[0x9]
+    address private _owner; // STORAGE[0x1]
+    address private _publicAddress; // STORAGE[0x4]
+    address private _callerAddress; // STORAGE[0x5]
+
+    // Events for tracking ownership and transfer
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    constructor(string memory name_, string memory symbol_, uint8 decimals_, uint256 totalSupply_) {
+        _name = name_;
+        _symbol = symbol_;
+        _decimals = decimals_;
+        _totalSupply = totalSupply_;
+        _owner = msg.sender;
+        _balances[msg.sender] = totalSupply_;
+    }
+
+    // Function to retrieve the name of the token
+    function name() public view returns (string memory) { 
+        return _name;
+    }
+
+    function symbol() public view returns (string memory) { 
+        return _symbol;
+    }
+
+    function decimals() public view returns (uint8) { 
+        return _decimals;
+    }
+
+    function totalSupply() public view returns (uint256) { 
+        return _totalSupply;
+    }
+
+    function balanceOf(address account) public view returns (uint256) {
+        return _balances[account];
+    }
+
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(_balances[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
+
+        _balances[msg.sender] -= amount;
+        _balances[recipient] += amount;
+        emit Transfer(msg.sender, recipient, amount);
+        return true;
+    }
+
+    function allowance(address owner, address spender) public view returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    function approve(address spender, uint256 amount) public returns (bool) {
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _allowances[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(_balances[sender] >= amount, "ERC20: transfer amount exceeds balance");
+        require(_allowances[sender][msg.sender] >= amount, "ERC20: transfer amount exceeds allowance");
+
+        _balances[sender] -= amount;
+        _balances[recipient] += amount;
+        _allowances[sender][msg.sender] -= amount;
+        emit Transfer(sender, recipient, amount);
+        return true;
+    }
+}
+```

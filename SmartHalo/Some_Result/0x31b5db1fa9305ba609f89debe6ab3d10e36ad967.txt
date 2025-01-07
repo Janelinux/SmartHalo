@@ -1,0 +1,76 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract NFTContract {
+    uint256[] private nftNames; // STORAGE[0x0]
+    uint256[] private nftSymbols; // STORAGE[0x1]
+    mapping(uint256 => uint256[]) private tokenApprovals; // STORAGE[0x2]
+    mapping(uint256 => uint256[]) private tokenOwners; // STORAGE[0x3]
+    mapping(uint256 => uint256[]) private approvedAddresses; // STORAGE[0x4]
+    mapping(uint256 => uint256[]) private isApprovedForAll; // STORAGE[0x5]
+    mapping(uint256 => uint256[]) private additionalMapping; // STORAGE[0x6]
+    uint256 private tokenCounter; // STORAGE[0x7]
+    uint256 private typeCounter; // STORAGE[0x8]
+    mapping(uint256 => uint256[]) private powerOfNFTs; // STORAGE[0xa]
+    mapping(uint256 => uint256[]) private isMinter; // STORAGE[0xb]
+    uint256[] private nftPrices; // STORAGE[0xc]
+    mapping(uint256 => uint256[]) private nftTypes; // STORAGE[0xd]
+    address private stableCoinAddress; // STORAGE[0x9]
+    address private stableCoin; // STORAGE[0xe]
+
+    // Events
+    event NFTAdded(uint256 indexed id, uint256 indexed typeId, uint256 indexed power, bool success);
+    event NFTMinted(uint256 indexed id, uint256 indexed typeId, address to);
+    event NFTUpdated(uint256 indexed id, uint256 indexed typeId, uint256 power, bool success);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+
+    function incrementValue(uint256 value) private pure returns (uint256) { 
+        require(value != type(uint256).max, "Panic: Invalid Value");
+        return value + 1;
+    }
+
+    function getNFTsOfUser(address userAddress) public view returns (uint256[] memory) {
+        require(msg.data.length >= 36, "Invalid data length"); // 4 bytes for selector + 32 bytes for address
+        require(userAddress != address(0), "ERC721: address zero is not a valid owner");
+        
+        uint256 totalTokens = tokenOwnersCount(userAddress);
+        require(totalTokens <= tokenCounter, "Panic: Overflow"); // Ensure totalTokens does not exceed tokenCounter
+        
+        uint256[] memory nftList = new uint256[](totalTokens);
+        
+        if (totalTokens > 0) {
+            uint256 index = 0; // The index variable must be of type uint256
+            for (uint256 i = 1; i <= tokenCounter; i++) {
+                address owner = getOwnerOfToken(i);
+                if (owner == userAddress) {
+                    require(nftTypes[i].length < nftPrices.length, "Panic: Invalid NFT Type");
+                    nftList[index] = i; // Assign the NFT ID to the nftList array
+                    index = incrementValue(index); // Increment index
+                }
+                if (index == totalTokens) {
+                    break; // Exit the loop if we have filled the required number of NFTs 
+                }
+            }
+        }
+        
+        return nftList;
+    }
+
+    function getOwnerOfToken(uint256 tokenId) private view returns (address) { 
+        require(tokenId < tokenCounter, "ERC721: Invalid token ID");
+        return address(tokenOwners[tokenId]);
+    }
+
+    function calculateArraySize(uint256 value) private pure returns (uint256) { 
+        uint256 size = value >> 1;
+        require((value & 0x1) == 0 || size < 32, "Panic: Size out of bounds");
+        return size;
+    }
+
+    function tokenOwnersCount(address userAddress) private view returns (uint256) {
+        return tokenOwners[uint256(uint160(userAddress))].length;
+    }
+}
+```

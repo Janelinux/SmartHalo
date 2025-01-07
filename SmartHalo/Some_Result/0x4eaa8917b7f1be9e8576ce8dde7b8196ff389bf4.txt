@@ -1,0 +1,84 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.10;
+
+contract ERC20Token {
+    // State Variables
+    mapping(address => uint256) private _balanceOf; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping(address => mapping(address => uint256)) private _allowance; // The name of the corresponding state variable before the modification:_allowance
+    uint256 private _totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    uint256 private _tradingStartTime; // The name of the corresponding state variable before the modification:stor_6
+    address private _owner; // The name of the corresponding state variable before the modification:_owner
+    address private _pool; // The name of the corresponding state variable before the modification:_pool
+
+    // Events
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Internal function to handle the transfer logic
+    function _performTransfer(uint256 amount, address recipient, address sender) private {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        // Check if trading is started or if 'pool' is set
+        if (_pool != address(0)) {
+            if (recipient != _pool) {
+                uint256 maxWalletSize = _getMaxWalletSize();
+                uint256 updatedBalance = _safeAdd(_balanceOf[recipient], amount);
+                require(updatedBalance <= maxWalletSize, "wallet maximum exceeded");
+            }
+        } else {
+            bool isOwner = sender == _owner || recipient == _owner; // Check if sender or recipient is the owner
+            require(isOwner, "trading is not started");
+        }
+
+        // Ensure the sender has enough balance
+        require(_balanceOf[sender] >= amount, "ERC20: transfer amount exceeds balance");
+        
+        // Execute the transfer
+        _balanceOf[sender] -= amount;
+        _balanceOf[recipient] = _safeAdd(_balanceOf[recipient], amount);
+        emit Transfer(sender, recipient, amount);
+    }
+
+    // Internal Safe Add Function to avoid overflow
+    function _safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= type(uint256).max - b, "Panic: arithmetic overflow");
+        return a + b;
+    }
+
+    // Public function to transfer tokens
+    function transfer(address recipient, uint256 amount) public {
+        require(msg.data.length >= 68, "Insufficient data length"); // Ensure the correct data length (4 bytes + 32 bytes + 32 bytes)
+        _performTransfer(amount, recipient, msg.sender);
+    }
+
+    // Public function to transfer tokens from an allowance
+    function transferFrom(address sender, address recipient, uint256 amount) public {
+        require(msg.data.length >= 96, "Insufficient data length"); // Ensure the correct data length (4 bytes + 32 bytes + 32 bytes + 32 bytes)
+
+        _performTransfer(amount, recipient, sender);
+        require(_allowance[sender][msg.sender] >= amount, "ERC20: transfer amount exceeds allowance");
+        _allowance[sender][msg.sender] -= amount; // Deduct the allowance
+        emit Approval(sender, msg.sender, _allowance[sender][msg.sender]); // Emit an Approval event
+    }
+
+    // Internal function to return maximum wallet size based on time
+    function _getMaxWalletSize() private view returns (uint256) {
+        if (_tradingStartTime != 0) {
+            require(block.timestamp >= _tradingStartTime, "Panic: trading not started");
+            require(block.timestamp - _tradingStartTime != 0, "Panic: division by zero");
+            uint256 timeDifference = block.timestamp - _tradingStartTime;
+
+            // Ensure safe multiplication and avoid overflow
+            require(timeDifference <= type(uint256).max / 0x2386f26fc10000, "Panic: arithmetic overflow");
+
+            // Calculate wallet size with consideration to the elapsed time
+            return _safeAdd(0x470de4df820000, (timeDifference * 0x2386f26fc10000) / 60);
+        } else {
+            return _totalSupply; // Default to total supply if trading not started
+        }
+    }
+}
+```

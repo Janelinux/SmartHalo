@@ -1,0 +1,86 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Token {
+    // State Variables
+    mapping (address => uint256) public balanceOf; // STORAGE[0x0] // The name of the corresponding state variable before the modification: _balanceOf
+    mapping (address => mapping(address => uint256)) public allowance; // STORAGE[0x1] // The name of the corresponding state variable before the modification: _allowance
+    uint256 public totalSupply; // STORAGE[0x2] // The name of the corresponding state variable before the modification: _totalSupply
+    string public name; // STORAGE[0x3] // The name of the corresponding state variable before the modification: _name
+    string public symbol; // STORAGE[0x4] // The name of the corresponding state variable before the modification: _symbol
+    uint256 public maxTransactionAmount; // STORAGE[0x9] // The name of the corresponding state variable before the modification: _maxTransactionAmount
+    uint256 public swapTokensAtAmount; // STORAGE[0xa] // The name of the corresponding state variable before the modification: _swapTokensAtAmount
+    uint256 public maxWallet; // STORAGE[0xb] // The name of the corresponding state variable before the modification: _maxWallet
+    mapping (address => bool) public isExcludedFromFees; // STORAGE[0x1d] // The name of the corresponding state variable before the modification: _isExcludedFromFees
+    mapping (address => bool) public isExcludedMaxTransactionAmount; // STORAGE[0x1e] // The name of the corresponding state variable before the modification: __isExcludedMaxTransactionAmount
+    mapping (address => bool) public automatedMarketMakerPairs; // STORAGE[0x1f] // The name of the corresponding state variable before the modification: _automatedMarketMakerPairs
+    bool public limitsInEffect; // STORAGE[0xc] // The name of the corresponding state variable before the modification: _limitsInEffect
+    bool public tradingActive; // STORAGE[0xc] // The name of the corresponding state variable before the modification: _tradingActive
+    bool public swapEnabled; // STORAGE[0xc] // The name of the corresponding state variable before the modification: _swapEnabled
+    bool public transferDelayEnabled; // STORAGE[0xe] // The name of the corresponding state variable before the modification: _transferDelayEnabled
+    address public owner; // STORAGE[0x5] // The name of the corresponding state variable before the modification: _owner
+    address public charityWallet; // STORAGE[0x6] // The name of the corresponding state variable before the modification: _charityWallet
+    address public marketingWallet; // STORAGE[0x7] // The name of the corresponding state variable before the modification: _marketingWallet
+    address public devWallet; // STORAGE[0x8] // The name of the corresponding state variable before the modification: _devWallet
+    uint256 public tokensForCharity; // STORAGE[0x19] // The name of the corresponding state variable before the modification: _tokensForCharity
+    uint256 public tokensForMarketing; // STORAGE[0x1a] // The name of the corresponding state variable before the modification: _tokensForMarketing
+    uint256 public tokensForLiquidity; // STORAGE[0x1b] // The name of the corresponding state variable before the modification: _tokensForLiquidity
+    uint256 public tokensForDev; // STORAGE[0x1c] // The name of the corresponding state variable before the modification: _tokensForDev
+
+    // Events
+    event ExcludeFromFees(address indexed account, bool isExcluded);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiqudity);
+
+    // Safe Math Functions
+    function safeMul(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(!(a == 0 || (b > (type(uint256).max / a))), "Overflow detected");
+        return a * b;
+    }
+
+    function safeDiv(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(b > 0, "Division by zero");
+        return a / b;
+    }
+
+    function safeSub(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(a >= b, "Underflow detected");
+        return a - b;
+    }
+
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(b <= type(uint256).max - a, "Overflow detected");
+        return a + b;
+    }
+
+    // The 'transfer' function allows transferring tokens from sender to recipient
+    function transfer(address to, uint256 value) public returns (bool) { 
+        // Ensure the caller has enough balance to perform the transfer
+        require(value <= balanceOf[msg.sender], "Insufficient balance"); // msg.sender is of type address
+        balanceOf[msg.sender] = safeSub(balanceOf[msg.sender], value);
+        balanceOf[to] = safeAdd(balanceOf[to], value);
+        emit Transfer(msg.sender, to, value);
+        return true;
+    }
+
+    // The 'transferFrom' function allows transferring tokens on behalf of an address
+    function transferFrom(address from, address to, uint256 value) public returns (bool) { 
+        require(value <= allowance[from][msg.sender], "Transfer exceeds allowance"); // Check the allowance
+        allowance[from][msg.sender] = safeSub(allowance[from][msg.sender], value);
+        balanceOf[from] = safeSub(balanceOf[from], value);
+        balanceOf[to] = safeAdd(balanceOf[to], value);
+        emit Transfer(from, to, value);
+        return true;
+    }
+
+    // Additional executed function blocks and logic will be detailed as per original functionality.
+    // The following function checks if the length of the msg.data is at least 64 bytes
+    function checkMessageData() public view {
+        require(4 + (msg.data.length - 4) - 4 >= 64, "Insufficient msg.data length"); // msg.data is of type bytes
+    }
+}
+```

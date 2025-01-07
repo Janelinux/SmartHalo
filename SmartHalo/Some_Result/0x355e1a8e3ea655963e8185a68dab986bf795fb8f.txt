@@ -1,0 +1,85 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+contract ImprovedContract {
+    // State variables declared
+    uint256 private _owner; // STORAGE[0x0]
+    mapping(uint256 => uint256) private _balanceOf; // STORAGE[0x1]
+    mapping(uint256 => mapping(uint256 => uint256)) private _allowance; // STORAGE[0x2]
+    uint256[] private _array4; // STORAGE[0x4]
+    uint256[] private _array5; // STORAGE[0x5]
+    uint256 private _decimals; // STORAGE[0x6]
+    uint256 private _totalSupply; // STORAGE[0x7]
+    uint256 private _stor9; // STORAGE[0x9]
+    mapping(uint256 => uint256) private _specialMapping; // STORAGE[0xb]
+    uint256 private _storA0_19; // STORAGE[0xa]
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Internal function for safe subtraction
+    function safeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a >= b, "SafeMath: subtraction overflow");
+        return a - b;
+    }
+
+    // Internal function for safe addition
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+        return c;
+    }
+
+    // Internal function for safe multiplication
+    function safeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+        return c;
+    }
+
+    // Internal function for safe division
+    function safeDiv(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b > 0, "SafeMath: division by zero");
+        return a / b;
+    }
+
+    // Internal function to handle transfer logic
+    function _transfer(uint256 amount, address recipient, address sender) private {
+        require(recipient != address(0), "IERC20: transfer to the zero address");
+        require(sender != address(0), "IERC20: transfer from the zero address");
+        require(_balanceOf[sender] >= amount, "IERC20: transfer amount exceeds balance");
+
+        uint256 fee = safeDiv(safeMul(amount, _stor9), 100); // Calculate fee
+        uint256 amountTransfer = safeSub(amount, fee); // Actual amount to transfer after fee
+
+        _balanceOf[sender] = safeSub(_balanceOf[sender], amount); // Deduct balance from sender
+        _balanceOf[recipient] = safeAdd(_balanceOf[recipient], amountTransfer); // Add balance to recipient
+
+        emit Transfer(sender, _storA0_19, fee); // Emit fee transfer
+        emit Transfer(sender, recipient, amountTransfer); // Emit actual transfer
+    }
+
+    // Public function to transfer tokens
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(msg.data.length >= 68, "Insufficient data length"); // 4 bytes for function selector + 32 bytes for address + 32 bytes for value
+        _transfer(amount, recipient, msg.sender);
+        return true;
+    }
+
+    // Public function to transfer tokens on behalf of another
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        require(msg.data.length >= 100, "Insufficient data length"); // 4 bytes for function selector + 32 bytes for address (from) + 32 bytes for address (to) + 32 bytes for amount
+
+        require(_allowance[sender][msg.sender] >= amount, "IERC20: transfer amount exceeds allowance"); // Check allowance
+        _allowance[sender][msg.sender] = safeSub(_allowance[sender][msg.sender], amount); // Deduct allowance
+        _transfer(amount, recipient, sender);
+        return true;
+    }
+}
+```

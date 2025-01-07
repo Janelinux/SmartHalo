@@ -1,0 +1,106 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    // State Variables
+    uint256 private initializationStatus; // The name of the corresponding state variable before the modification: stor_0_0_0
+    bool private isContractInitialized; // The name of the corresponding state variable before the modification: stor_0_1_1
+    mapping (uint256 => uint256) private royaltyInfo; // The name of the corresponding state variable before the modification: _royaltyInfo
+    string[] private nameList; // The name of the corresponding state variable before the modification: _name
+    string[] private symbolList; // The name of the corresponding state variable before the modification: _symbol
+    mapping (uint256 => uint256) private tokenDetails; // The name of the corresponding state variable before the modification: map_fd
+    mapping (uint256 => uint256) private ownerData; // The name of the corresponding state variable before the modification: owner_fe
+    mapping (uint256 => uint256) private approvalStatus; // The name of the corresponding state variable before the modification: _isApprovedForAll
+    mapping (uint256 => uint256) private tokensOwnedByIndex; // The name of the corresponding state variable before the modification: _tokenOfOwnerByIndex
+    mapping (uint256 => uint256) private metadataMap; // The name of the corresponding state variable before the modification: map_12e
+    uint256[] private totalSupplyList; // The name of the corresponding state variable before the modification: _totalSupply
+    mapping (uint256 => uint256) private additionalData; // The name of the corresponding state variable before the modification: map_130
+    mapping (uint256 => uint256) private externalLinkData; // The name of the corresponding state variable before the modification: map_1c3
+    string[] private contractURIs; // The name of the corresponding state variable before the modification: _contractURI
+    uint256[] private extraData; // The name of the corresponding state variable before the modification: array_229
+    uint256 private storageVariable; // The name of the corresponding state variable before the modification: stor_22a
+    mapping (uint256 => uint256) private nonceStatus; // The name of the corresponding state variable before the modification: _isNonceProcessed
+    mapping (uint256 => uint256) private whitelistedUsers; // The name of the corresponding state variable before the modification: _whitelistedUsers
+    uint256 private openForAllStatus; // The name of the corresponding state variable before the modification: _openForAll
+    uint256 private mintingFee; // The name of the corresponding state variable before the modification: _mintingCharge
+    mapping (uint256 => uint256) private ecosystemContracts; // The name of the corresponding state variable before the modification: _ecosystemContract
+    uint256 private brokerageFee; // The name of the corresponding state variable before the modification: _brokerage
+    uint256 private lazyMintStatus; // The name of the corresponding state variable before the modification: _lazyMint
+    address private contractOwner; // The name of the corresponding state variable before the modification: _owner
+    uint256 private royaltyPercentageLimit; // The name of the corresponding state variable before the modification: _royaltyLimit
+    address private brokerAddress; // The name of the corresponding state variable before the modification: _broker
+    
+    // Events
+    event Initialized(uint8 version);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Upgraded(address indexed newImplementation);
+
+    function initialize(
+        uint256 nameCount, // number of names to initialize
+        uint256 symbolCount, // number of symbols to initialize
+        uint256 metadataCount, // number of metadata entries
+        uint256 royaltyLimit, // maximum royalty percentage
+        uint256 mintingCharge, // fee for minting
+        address broker, // address of the broker
+        uint256 brokerage, // fee for brokerage
+        uint256 lazyMint // status for lazy minting
+    ) public {
+        // Require sufficient length for message data
+        require(msg.data.length >= 288, "Insufficient data length.");
+        
+        // Validate input parameters
+        require(nameCount <= type(uint256).max, "Name count exceeds max value.");
+        require(symbolCount <= type(uint256).max, "Symbol count exceeds max value.");
+        require(metadataCount <= type(uint256).max, "Metadata count exceeds max value.");
+        require(broker != address(0), "Broker address cannot be zero.");
+
+        // Initialize name list
+        nameList = new string[](nameCount);
+        for (uint256 i = 0; i < nameCount; i++) {
+            nameList[i] = string(abi.encodePacked("Name_", i));
+        }
+
+        // Initialize symbol list
+        symbolList = new string[](symbolCount);
+        for (uint256 j = 0; j < symbolCount; j++) {
+            symbolList[j] = string(abi.encodePacked("Symbol_", j));
+        }
+
+        // Initialize contract URIs
+        contractURIs = new string[](metadataCount);
+        for (uint256 k = 0; k < metadataCount; k++) {
+            contractURIs[k] = string(abi.encodePacked("URI_", k));
+        }
+
+        // Validate royalty limit
+        require(royaltyLimit <= 10000, "Royalty limit must be below 100%.");
+        royaltyPercentageLimit = royaltyLimit;
+
+        storageVariable = 0; // Reset storage variable
+        mintingFee = mintingCharge; // Set minting fee
+        brokerAddress = broker; // Set broker address
+        openForAllStatus = 1; // Reset open for all status
+        brokerageFee = brokerage; // Set brokerage fee
+        lazyMintStatus = lazyMint; // Set lazy mint status
+
+        // Set contract owner
+        contractOwner = msg.sender; // Get sender address
+        emit OwnershipTransferred(address(0), contractOwner); // Emit event for ownership transfer
+
+        // Set initialization status
+        if (!isContractInitialized) {
+            require(initializationStatus == 0, "Contract already initialized."); // Check if already initialized
+            initializationStatus = 1; // Set initialization status
+            isContractInitialized = true; // Mark contract as initialized
+            emit Initialized(1); // Emit initialized event
+        }
+    }
+
+    function requireInitialization() private view {
+        require(isContractInitialized, "Contract is not initializing."); // Check if the contract is initializing
+    }
+}
+```

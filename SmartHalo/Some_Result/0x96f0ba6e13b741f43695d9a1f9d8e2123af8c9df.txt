@@ -1,0 +1,111 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedToken {
+    // State Variables
+    mapping(address => uint256) private balances; // The name of the corresponding state variable before the modification: _balanceOf
+    mapping(address => mapping(address => uint256)) private allowances; // The name of the corresponding state variable before the modification: _allowance
+    uint256 private totalSupply; // The name of the corresponding state variable before the modification: _totalSupply
+    string private tokenName; // The name of the corresponding state variable before the modification: _name
+    string private tokenSymbol; // The name of the corresponding state variable before the modification: _symbol
+    uint256 private maxTransactionAmount; // The name of the corresponding state variable before the modification: _maxTransactionAmount
+    uint256 private swapTokensAtAmount; // The name of the corresponding state variable before the modification: _swapTokensAtAmount
+    uint256 private maxWallet; // The name of the corresponding state variable before the modification: _maxWallet
+    uint256 private buyTotalFees; // The name of the corresponding state variable before the modification: _buyTotalFees
+    uint256 private buyDevFee; // The name of the corresponding state variable before the modification: _buyDevFee
+    uint256 private buyLiquidityFee; // The name of the corresponding state variable before the modification: _buyLiquidityFee
+    uint256 private sellTotalFees; // The name of the corresponding state variable before the modification: _sellTotalFees
+    uint256 private sellDevFee; // The name of the corresponding state variable before the modification: _sellDevFee
+    uint256 private sellLiquidityFee; // The name of the corresponding state variable before the modification: _sellLiquidityFee
+    mapping(address => bool) private isExcludedFromFees; // The name of the corresponding state variable before the modification: _isExcludedFromFees
+    mapping(address => bool) private isExcludedMaxTransactionAmount; // The name of the corresponding state variable before the modification: __isExcludedMaxTransactionAmount
+    uint8 private limitsInEffect; // The name of the corresponding state variable before the modification: _limitsInEffect
+    bool private tradingActive; // The name of the corresponding state variable before the modification: _tradingActive
+    bool private swapEnabled; // The name of the corresponding state variable before the modification: _swapEnabled
+    address private owner; // The name of the corresponding state variable before the modification: _owner
+    address private uSDC; // The name of the corresponding state variable before the modification: _uSDC
+    address private devWallet; // The name of the corresponding state variable before the modification: _devWallet
+    bool private isSwapping; // The name of the corresponding state variable before the modification: stor_6_20_20
+
+    // Events
+    event DevWalletUpdated(address indexed previousWallet, address indexed newWallet);
+    event ExcludeFromFees(address indexed account, bool isExcluded);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Transfer function
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount <= balances[msg.sender], "ERC20: transfer amount exceeds balance");
+        
+        processTransfer(amount, recipient, msg.sender);
+        return true;
+    }
+
+    // Transfer from function
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount <= allowances[sender][msg.sender], "ERC20: transfer amount exceeds allowance");
+
+        processTransfer(amount, recipient, sender);
+        allowances[sender][msg.sender] -= amount; // Decrease the allowance
+        return true; // The return type of transferFrom is consistent with the boolean type as per the note.
+    }
+
+    // Process the transfer logic
+    function processTransfer(uint256 amount, address recipient, address sender) private {
+        if (amount == 0) {
+            return;
+        }
+
+        // Check if limits are in effect and handle trading logic
+        if (limitsInEffect == 1) {
+            require(tradingActive, "Trading is not active.");
+            if (!isExcludedFromFees[sender]) {
+                require(amount <= maxTransactionAmount, "Transfer amount exceeds max transaction limit.");
+                require(balances[recipient] + amount <= maxWallet, "Max wallet exceeded.");
+            }
+        }
+
+        // Handle swap if applicable
+        if (isSwapping) return; // Avoid recursive swaps
+        isSwapping = true;
+
+        uint256 contractTokenBalance = balances[address(this)];
+        if (contractTokenBalance >= swapTokensAtAmount) {
+            // Implement swap logic here.
+        }
+
+        // Update balances
+        balances[sender] -= amount;
+        balances[recipient] += amount;
+        
+        emit Transfer(sender, recipient, amount);
+
+        isSwapping = false; // Reset swapping status
+    }
+    
+    // Token utility functions
+    function approve(address spender, uint256 amount) public returns (bool) {
+        require(spender != address(0), "ERC20: approve to the zero address");
+        allowances[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+    
+    // Example utility function - Safe multiplication
+    function safeMul(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(!(a == 0 || b > (type(uint256).max / a)), "SafeMul: multiplication overflow");
+        return a * b;
+    }
+
+    // Example utility function - Safe division
+    function safeDiv(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b > 0, "SafeDiv: division by zero");
+        return a / b;
+    }
+}
+```

@@ -1,0 +1,85 @@
+```solidity
+// Optimized Solidity Code
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    uint256[] private nameList; // STORAGE[0x0] // The name of the corresponding state variable before the modification:_name
+    uint256[] private symbolList; // STORAGE[0x1] // The name of the corresponding state variable before the modification:_symbol
+    mapping(uint256 => string) private tokenURI; // STORAGE[0x2] // The name of the corresponding state variable before the modification:_tokenURI
+    mapping(uint256 => address) private tokenOwner; // STORAGE[0x3] // The name of the corresponding state variable before the modification:owner_3
+    mapping(uint256 => uint256) private tokenMappings; // STORAGE[0x4] // The name of the corresponding state variable before the modification:map_4
+    mapping(uint256 => mapping(address => bool)) private approvals; // STORAGE[0x5] // The name of the corresponding state variable before the modification:_isApprovedForAll
+    mapping(uint256 => uint256) private additionalMappings; // STORAGE[0x6] // The name of the corresponding state variable before the modification:map_6
+    mapping(uint256 => uint256) private secondaryMappings; // STORAGE[0x7] // The name of the corresponding state variable before the modification:map_7
+    uint256[] private totalSupplyList; // STORAGE[0x8] // The name of the corresponding state variable before the modification:_totalSupply
+    mapping(uint256 => uint256) private mappingNine; // STORAGE[0x9] // The name of the corresponding state variable before the modification:map_9
+    uint256[] private dataBuffer; // STORAGE[0xb] // The name of the corresponding state variable before the modification:array_b
+    bool private paused; // STORAGE[0xc] // The name of the corresponding state variable before the modification:_paused
+    address private contractOwner; // STORAGE[0xa] // The name of the corresponding state variable before the modification:_owner
+
+    // Events
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Function to handle bitwise operations
+    function adjustValues(uint256 inputValue) private pure returns (uint256) {
+        uint256 valueShifted = inputValue >> 1;
+        uint256 remainder = inputValue & 0x01;
+        if (remainder == 0) {
+            valueShifted = valueShifted & 0x7f;
+        }
+        require(remainder != valueShifted && valueShifted < 32, "Panic: Invalid shift values");
+        return valueShifted;
+    }
+
+    // Safe division function
+    function safeDivide(uint256 dividend, uint256 divisor) private pure returns (uint256) {
+        require(divisor > 0, "Panic: Division by zero");
+        return dividend / divisor;
+    }
+
+    // Increment function
+    function incrementValue(uint256 value) private pure returns (uint256) {
+        require(value != type(uint256).max, "Panic: Overflow error");
+        return value + 1;
+    }
+
+    // Safe subtraction function
+    function safeSubtract(uint256 minuend, uint256 subtrahend) private pure returns (uint256) {
+        require(minuend >= subtrahend, "Panic: Underflow error");
+        return minuend - subtrahend;
+    }
+
+    // Safe addition function
+    function safeAdd(uint256 summand1, uint256 summand2) private pure returns (uint256) {
+        require(summand1 <= type(uint256).max - summand2, "Panic: Overflow error");
+        return summand1 + summand2;
+    }
+
+    // Public function to retrieve token URI
+    function getTokenURI(uint256 tokenId) public view returns (string memory) {
+        // Check if the function call has sufficient data length
+        require(msg.data.length >= 68, "Invalid data length"); // Inline calculation of expected length for clarity
+
+        // Ensure tokenId is valid
+        require(tokenId < totalSupplyList.length, "ERC721Metadata: URI query for nonexistent token");
+        
+        // Initialize v0 to correspond to the length of the dataBuffer
+        uint256 uriLength = adjustValues(dataBuffer.length); // Type uint256
+        bytes memory uriBytes = new bytes(uriLength); // Declared as bytes array
+        
+        // Retrieve the base URI for the token
+        bytes memory baseUriBytes = bytes(tokenURI[tokenId]); // Ensure base URI are in bytes
+        uint256 index = 0;
+
+        // Copy base URI bytes into uriBytes
+        for (uint256 i = 0; i < baseUriBytes.length; i++) {
+            uriBytes[i] = baseUriBytes[i];
+        }
+
+        return string(uriBytes);
+    }
+}
+```

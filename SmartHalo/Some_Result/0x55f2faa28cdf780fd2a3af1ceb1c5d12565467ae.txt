@@ -1,0 +1,297 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract FineTunedContract {
+    uint256 storageVariableD; // STORAGE[0xd]
+    uint256 generativeSeriesId; // STORAGE[0xe]
+    mapping(uint256 => uint256[]) generativeSeries; // STORAGE[0xf]
+    mapping(uint256 => uint256[]) generativeSeriesRoyalty; // STORAGE[0x10]
+    mapping(uint256 => uint256[]) bankAddressGenerative; // STORAGE[0x12]
+    mapping(uint256 => uint256[]) baseCurrencyGenerative; // STORAGE[0x13]
+    mapping(uint256 => uint256[]) generativeCollection; // STORAGE[0x14]
+    mapping(uint256 => uint256[]) boxesGenerative; // STORAGE[0x15]
+    mapping(uint256 => uint256[]) generativeBoxOwner; // STORAGE[0x16]
+    mapping(uint256 => uint256[]) nftsToMint; // STORAGE[0x17]
+    uint256 nonGenerativeSeriesId; // STORAGE[0x18]
+    mapping(uint256 => uint256[]) copiesData; // STORAGE[0x19]
+    uint256 ownerId; // STORAGE[0x0] bytes 0 to 19
+    mapping(uint256 => uint256[]) nonGenerativeSeries; // STORAGE[0x1a]
+    mapping(uint256 => uint256[]) buyBox; // STORAGE[0x1b]
+    mapping(uint256 => uint256[]) bankAddress; // STORAGE[0x1c]
+    mapping(uint256 => uint256[]) nonGenerativeRoyalty; // STORAGE[0x1d]
+    mapping(uint256 => uint256[]) baseCurrency; // STORAGE[0x1e]
+    mapping(uint256 => uint256[]) boxesNonGenerative; // STORAGE[0x1f]
+    mapping(uint256 => uint256[]) nonGenerativeBoxOwner; // STORAGE[0x20]
+    mapping(uint256 => uint256[]) mapAlternative; // STORAGE[0x27]
+    mapping(uint256 => uint256[]) ownerCount; // STORAGE[0x28]
+    mapping(uint256 => uint256[]) ownerCurrency; // STORAGE[0x2a]
+    mapping(uint256 => uint256[]) ownerDetails; // STORAGE[0x2d]
+    uint256 temporaryStorage7; // STORAGE[0x7] bytes 0 to 19
+    uint256 temporaryStorageA; // STORAGE[0xa] bytes 0 to 19
+    uint256 temporaryStorageC; // STORAGE[0xc] bytes 0 to 19
+    uint256 temporaryStorage25; // STORAGE[0x25] bytes 0 to 19
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event BoxMintNonGen(uint256 indexed boxId, uint256 indexed seriesId);
+    event BuyBoxNonGen(uint256 indexed boxId, uint256 indexed seriesId, uint256 indexed currencyId, uint256 amount, string metadata, address buyer, uint256 fee, uint256 totalPrice);
+
+    function getHalvedValue(uint256 inputValue) private pure returns (uint256) {
+        uint256 halved = inputValue >> 1;  // Halve the input value
+        uint256 isOdd = inputValue & 0x1;   // Check if the input value is odd
+        if (!isOdd) {
+            halved &= 0x7f; // If even, apply a mask
+        }
+        require(isOdd != (halved < 32), "Panic: Value out of bounds");
+        return halved;
+    }
+
+    function safeMultiply(uint256 valueA, uint256 valueB) private pure returns (uint256) {
+        require(!(valueB != 0 && valueA > type(uint256).max / valueB), "Panic: Multiplication Overflow");
+        return valueB * valueA; // Return the product of two numbers
+    }
+
+    function safeDivide(uint256 valueA, uint256 valueB) private pure returns (uint256) {
+        require(valueA != 0, "Panic: Division by Zero");
+        return valueB / valueA; // Return the quotient of two numbers
+    }
+
+    function buyBox(
+        uint256 boxId,
+        bool isPurchase,
+        uint256 assetId,
+        address buyerAddress,
+        string calldata metadata,
+        bytes32 metadataHash
+    ) public payable {
+        require(msg.data.length - 4 >= 192, "Invalid Message Length");
+        require(isPurchase == isPurchase, "Purchase mismatch");
+        require(buyerAddress == buyerAddress, "Buyer Address mismatch");
+        require(bytes(metadata).length <= 0xffffffffffffffff, "Metadata length exceeds limits");
+        require(4 + bytes(metadata).length + 31 < msg.data.length, "Message Length Error");
+        require(bytes(metadata).length <= 0xffffffffffffffff, "Panic: Metadata Length Error");
+        
+        // Additional validations on metadata allocation
+        require(!((gasleft() + (63 + (~0x1f & bytes(metadata).length + 31) & ~0x1f) < gasleft()) || (gasleft() + (63 + (~0x1f & bytes(metadata).length + 31) & ~0x1f) > 0xffffffffffffffff)), "Panic: Metadata Allocation Error");
+        
+        require(4 + bytes(metadata).length + bytes(metadata).length + 32 <= msg.data.length, "Message Length Error");
+
+        // Copy the metadata from calldata
+        uint256 v0; // Ensure type aligns with v1 and v3
+        assembly {
+            v0 := add(metadata.offset, 32)
+        }
+
+        if (!isPurchase) {
+            uint256 index = 0;
+            uint256 found = 0;
+
+            while (index < buyBox[boxId].length) {
+                require(index < buyBox[boxId].length, "Index Out of Bounds");
+                if (keccak256(abi.encodePacked(buyBox[boxId][index])) == keccak256(abi.encodePacked(assetId))) {
+                    found = 1; // Asset found flag
+                }
+                index = incrementIndex(index); // Proceed to next index
+            }
+            
+            if (found) {
+                if (buyBox[boxId].length > 0) {
+                    found = (1 == assetId); // Continue processing found asset
+                }
+                if (!found) {
+                    found = (assetId < 1);
+                }
+                if (found) {
+                    bool isOwner = !(0xff & mapAlternative[boxId].length);
+                    if (0xff & mapAlternative[boxId].length) {
+                        isOwner = 0xff & ownerDetails[msg.sender].length;
+                    }
+                    if (isOwner) {
+                        uint256 loopCounter = 0;
+                        uint256 valueOfSeries = getHalvedValue(nonGenerativeSeries[boxId][1]);
+                        
+                        if (!(0x1 & nonGenerativeSeries[boxId][1])) {
+                            assembly {
+                                mstore(add(32, mload(64)), and(nonGenerativeSeries[boxId][1], not(0xff)))
+                                loopCounter := add(add(32, mload(64)), valueOfSeries)
+                            }
+                        } else if ((0x1 & nonGenerativeSeries[boxId][1]) == 1) {
+                            while (loopCounter < valueOfSeries) {
+                                assembly {
+                                    mstore(add(loopCounter, add(32, mload(64))), sload(add(keccak256(0, 32), loopCounter)))
+                                }
+                                loopCounter += 32; // Move to next loop iteration
+                            }
+                            loopCounter = 32 + 64 + valueOfSeries;
+                        }
+                        
+                        if (loopCounter - 64 - 32 > 0) {
+                            if (nonGenerativeSeries[boxId][7] > nonGenerativeSeries[boxId][10]) {
+                                if (block.timestamp >= nonGenerativeSeries[boxId][5] && block.timestamp <= nonGenerativeSeries[boxId][6]) {
+                                    if (nonGenerativeSeries[boxId][7] > nonGenerativeSeries[boxId][10]) {
+                                        nonGenerativeSeries[boxId][10] += 1; // Increment the count
+                                        storageVariableD += 1; // Increment the storage variable
+                                        
+                                        uint256 valueFromSeries = getHalvedValue(nonGenerativeSeries[boxId][3]);
+                                        uint256 boxCount = getHalvedValue(boxesNonGenerative[storageVariableD][0]);
+                                        
+                                        if (valueFromSeries) {
+                                            if (31 < valueFromSeries) {
+                                                boxesNonGenerative[storageVariableD][0] = 1 + (valueFromSeries + valueFromSeries); 
+                                                if (valueFromSeries) {
+                                                    while (loopCounter + (31 + valueFromSeries >> 5) > loopCounter) {
+                                                        assembly {
+                                                            sstore(loopCounter, sload(loopCounter))
+                                                        }
+                                                        loopCounter += 1;
+                                                    }
+                                                }
+                                            } else {
+                                                boxesNonGenerative[storageVariableD][0] = nonGenerativeSeries[boxId][3];
+                                            }
+                                        } else {
+                                            boxesNonGenerative[storageVariableD][0] = 0; // No value
+                                        }
+                                        while (loopCounter + (31 + boxCount >> 5) > loopCounter) {
+                                            assembly {
+                                                sstore(loopCounter, 0)
+                                            }
+                                            loopCounter++;
+                                        }
+                                        
+                                        uint256 valueFromBox = getHalvedValue(nonGenerativeSeries[boxId][4]);
+                                        uint256 boxValueCount = getHalvedValue(boxesNonGenerative[storageVariableD][1]);
+                                        
+                                       
+
+ if (valueFromBox) {
+                                            if (31 < valueFromBox) {
+                                                boxesNonGenerative[storageVariableD][1] = 1 + (valueFromBox + valueFromBox);
+                                                if (valueFromBox) {
+                                                    while (loopCounter + (31 + valueFromBox >> 5) > loopCounter) {
+                                                        assembly {
+                                                            sstore(loopCounter, sload(loopCounter))
+                                                        }
+                                                        loopCounter++;
+                                                    }
+                                                }
+                                            } else {
+                                                boxesNonGenerative[storageVariableD][1] = nonGenerativeSeries[boxId][4];
+                                            }
+                                        } else {
+                                            boxesNonGenerative[storageVariableD][1] = 0;
+                                        }
+                                        while (loopCounter + (31 + boxValueCount >> 5) > loopCounter) {
+                                            assembly {
+                                                sstore(loopCounter, 0)
+                                            }
+                                            loopCounter++;
+                                        }
+                                        boxesNonGenerative[storageVariableD][2] = boxId; // Assign box ID
+                                        boxesNonGenerative[storageVariableD][3] = nonGenerativeSeries[storageVariableD][8]; // Assign series value
+
+                                        emit BoxMintNonGen(storageVariableD, boxId); // Emit event
+
+                                        temporaryStorageC = temporaryStorage7; // Update temporary storage variable
+                                        uint256 totalPrice = getReservesFromTokenPrice(assetId, baseCurrency[boxId], nonGenerativeSeries[boxId][9]);
+                                        uint256 baseCurrencyPrice = safeDivide(0xe8d4a51000, totalPrice); // Calculate price
+
+                                        require(temporaryStorageC != address(0), "Invalid Token"); // Check token validity
+                                        (bool success, bytes memory returnData) = temporaryStorageC.call{gas: gasleft()}(abi.encodeWithSignature("transferFrom(address,address,uint256)", buyerAddress, bankAddress[boxId], baseCurrencyPrice));
+                                        require(success, "Transfer failed"); // Check transfer success
+                                        require(returnData.length >= 32); // Additional message checks 
+
+                                        nonGenerativeBoxOwner[storageVariableD] = (nonGenerativeBoxOwner[storageVariableD] & 0xffffffffffffffffffffffffffffffffffffffff) | uint256(uint160(msg.sender)); // Update owner
+                                        
+                                        if (ownerCount[msg.sender].length < ownerCurrency[boxId].length) {
+                                            require(temporaryStorageA != address(0), "Invalid Minting"); // Check minting validity
+                                            (bool mintSuccess,) = temporaryStorageA.call{gas: gasleft()}(abi.encodeWithSignature("mintBlindbox(address,address,uint256,address,uint256[],uint256)", buyerAddress, msg.sender, boxesGenerative[storageVariableD][3], address(boxesGenerative[storageVariableD]), boxesGenerative[storageVariableD], boxesGenerative[storageVariableD][2]));
+                                            require(mintSuccess, "Minting failed"); // Check minting success
+                                            
+                                            require(returnData.length >= 64);
+                                            boxesNonGenerative[storageVariableD][4] = (0x1 | ~0xff & boxesNonGenerative[storageVariableD][4]); // Update box details
+                                            emit BuyBoxNonGen(storageVariableD, boxId, nonGenerativeSeries[boxId][9], assetId, metadata, msg.sender, baseCurrency[boxId], baseCurrencyPrice); // Emit buy box event
+
+                                            ownerCount[msg.sender].push(1); // Increase owner count
+
+                                            uint256 copyLoopCounter = 0;
+                                            while (copyLoopCounter < bytes(metadata).length) {
+                                                assembly {
+                                                    mstore(add(copyLoopCounter, add(mload(35), 32)), mload(add(metadata, add(copyLoopCounter, 32))))
+                                                }
+                                                copyLoopCounter += 32; // Increment loop counter 
+                                            }
+
+                                            if (copyLoopCounter > bytes(metadata).length) {
+                                                assembly {
+                                                    mstore(add(add(35, mload(35)), mload(metadata)), 0)
+                                                }
+                                            }
+
+                                            assembly {
+                                                mstore(add(mload(metadata), add(35, 32)), 41)
+                                            }
+
+                                            uint256 updatedStorageValue = incrementIndex(STORAGE[keccak256(abi.encodePacked(boxId, keccak256(metadata)))]);
+                                            STORAGE[keccak256(abi.encodePacked(boxId, keccak256(metadata)))] = updatedStorageValue; // Update in storage
+
+                                            uint256 iterator = 0;
+                                            uint256 regValue = getHalvedValue(nonGenerativeSeries[boxId].length);
+                                            uint256[] memory newArray = new uint256[](regValue); // Create new array
+
+                                            if (!(0x1 & nonGenerativeSeries[boxId].length)) {
+                                                assembly {
+                                                    mstore(add(newArray, 32), and(nonGenerativeSeries[boxId], not(0xff)))
+                                                }
+                                            } else if ((0x1 & nonGenerativeSeries[boxId].length) == 1) {
+                                                while (iterator < regValue) {
+                                                    newArray[iterator] = nonGenerativeSeries[boxId][iterator]; // Fill array
+                                                    iterator += 32; // Increment to next data point
+                                                }
+                                            }
+                                            emit BuyBoxNonGen(storageVariableD, boxId, nonGenerativeSeries[boxId][9], assetId, newArray, msg.sender, baseCurrency[boxId], baseCurrencyPrice); // Emit buy box event
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            revert("Limit reached"); // Terminate function with error
+        }
+    }
+
+    function getReservesFromTokenPrice(uint256 tokenId, uint256 baseValue, uint256 reserveAmount) private view returns (uint256) {
+        require(temporaryStorage25 != address(0), "Invalid Token Address"); // Validate token address
+        (bool success, bytes memory data) = temporaryStorage25.staticcall{gas: gasleft()}(abi.encodeWithSignature("getReserves()"));
+        require(success, "Reserves call failed"); // Handle call status
+        require(data.length >= 96); // Memory checks
+        (uint112 reserve0, uint112 reserve1, uint32 blockTime) = abi.decode(data, (uint112, uint112, uint32));
+        require(reserve0 == reserve0 & 0xffffffffffffffffffffffffffff); 
+        require(reserve1 == reserve1 & 0xffffffffffffffffffffffffffff); 
+        require(blockTime == uint32(blockTime)); // Ensure blockTime is valid
+
+        if (tokenId == 0) {
+            if (baseValue == 1) {
+                return calculateTokenValue(reserve0, reserveAmount); // Calculate token value
+            }
+        } else if (tokenId == 1) {
+            if (baseValue == 0) {
+                return calculateTokenValue(reserve1, reserveAmount); // Calculate ratio
+            }
+        }
+        return reserveAmount; // Default return value
+    }
+
+    function calculateTokenValue(uint112 reserve, uint256 amount) private pure returns (uint256) {
+        return reserve * amount;
+    }
+
+    function incrementIndex(uint256 inputValue) private pure returns (uint256) {
+        require(inputValue != type(uint256).max, "Panic: Invalid Input Value");
+        return 1 + inputValue; // Increment the input value
+    }
+}
+```

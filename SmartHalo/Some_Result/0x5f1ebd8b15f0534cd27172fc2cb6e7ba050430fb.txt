@@ -1,0 +1,59 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract Token {
+    // Optimized and Annotated Decompiled Code
+    // Data structures and variables inferred from the use of storage instructions
+    mapping (uint256 => uint256) private _balanceOf; // STORAGE[0x0] // The name of the corresponding state variable before the modification:_balanceOf
+    mapping (uint256 => uint256) private _allowance; // STORAGE[0x1] // The name of the corresponding state variable before the modification:_allowance
+    uint256 private _totalSupply; // STORAGE[0x2] // The name of the corresponding state variable before the modification:_totalSupply
+    string private _name; // STORAGE[0x3] // The name of the corresponding state variable before the modification:_name
+    string private _symbol; // STORAGE[0x4] // The name of the corresponding state variable before the modification:_symbol
+    address private _owner; // STORAGE[0x5] // The name of the corresponding state variable before the modification:_owner
+
+    // Events
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Private function to calculate and return a value based on input
+    function _calculateValue(uint256 inputValue) private pure returns (uint256) { 
+        uint256 shiftedValue = inputValue >> 1; // Right shift to get half
+        uint256 isOdd = inputValue & 0x1; // Check if the number is odd
+
+        // If the number is even, adjust shifted value
+        if (isOdd == 0) {
+            shiftedValue = shiftedValue & 0x7f;
+        }
+
+        require(isOdd - (shiftedValue < 32) == 0, "Panic code 34");
+        return shiftedValue;
+    }
+
+    // Public function to return the name of the token
+    function name() public view returns (string memory) { 
+        uint256 calculatedLength = _calculateValue(bytes(_name).length); // Calculate length of name
+        bytes memory nameBytes = new bytes(calculatedLength); // Create a bytes array for name
+        
+        // Variable for indexing through the bytes of _name
+        uint256 bytesDataPointer = 0; // New variable consistent with other components
+
+        // Check if the calculated length is greater than zero
+        if (calculatedLength != 0) {
+            // If length is greater than 31, copy bytes in chunks of 32
+            if (calculatedLength > 31) {
+                uint256 index = 0; // Index variable for loop
+                while (index < calculatedLength) {
+                    nameBytes[bytesDataPointer] = bytes(_name)[index]; // Copy each byte
+                    index++; // Increment the index
+                    bytesDataPointer++; // Move to the next position in nameBytes
+                }
+            } else {
+                nameBytes[0] = bytes(_name)[0]; // Handle the single byte case
+            }
+        }
+
+        return string(nameBytes); // Convert bytes back to string and return
+    }
+}
+```

@@ -1,0 +1,90 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract TokenContract {
+    uint256 public maxTokenId; // STORAGE[0x1] // The name of the corresponding state variable before the modification: stor_1
+    uint256[] public tokenNames; // STORAGE[0x3] // The name of the corresponding state variable before the modification: _name
+    uint256[] public tokenSymbols; // STORAGE[0x4] // The name of the corresponding state variable before the modification: _symbol
+    mapping (uint256 => uint256[]) public tokenByIndex; // STORAGE[0x6] // The name of the corresponding state variable before the modification: _tokenByIndex
+    mapping (uint256 => uint256[]) public balanceOf; // STORAGE[0x7] // The name of the corresponding state variable before the modification: _balanceOf
+    mapping (uint256 => uint256[]) public approvalForAll; // STORAGE[0x8] // The name of the corresponding state variable before the modification: map_8
+    mapping (uint256 => uint256[]) public isApprovedForAll; // STORAGE[0x9] // The name of the corresponding state variable before the modification: _isApprovedForAll
+    mapping (uint256 => uint256[]) public transferToContract; // STORAGE[0xa] // The name of the corresponding state variable before the modification: __transferToContract
+    uint256[] public arrayData; // STORAGE[0xe] // The name of the corresponding state variable before the modification: array_e
+    uint256[] public uriSuffix; // STORAGE[0xf] // The name of the corresponding state variable before the modification: _uriSuffix
+    uint256[] public tokenURIs; // STORAGE[0x10] // The name of the corresponding state variable before the modification: _tokenURI
+    uint256 public totalSupply; // STORAGE[0x11] // The name of the corresponding state variable before the modification: _totalSupply
+    uint256 public maxMintPerTransaction; // STORAGE[0x12] // The name of the corresponding state variable before the modification: _maxMintPerTx
+    uint256 public maxMintPerWallet; // STORAGE[0x13] // The name of the corresponding state variable before the modification: _maxMintPerWallet
+    uint256 public mintPrice; // STORAGE[0x14] // The name of the corresponding state variable before the modification: _price
+    mapping (uint256 => uint256[]) public addressMintedBalance; // STORAGE[0x16] // The name of the corresponding state variable before the modification: _addressMintedBalance
+    address public owner; // STORAGE[0x0] // The name of the corresponding state variable before the modification: _owner
+    uint256 public allowedToContract; // STORAGE[0x5] // The name of the corresponding state variable before the modification: _allowedToContract
+    bool public paused; // STORAGE[0x15] // The name of the corresponding state variable before the modification: _paused
+    bool public revealed; // STORAGE[0x15] // The name of the corresponding state variable before the modification: _revealed
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Minted(uint256 indexed tokenId);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+
+    function isTokenExist(uint256 tokenId) private view returns (bool) { 
+        require(tokenId > 0, "Invalid TokenId"); // Ensure TokenId is valid
+        bool exists = (tokenId < maxTokenId); // Check if tokenId is less than maxTokenId
+        if (exists) {
+            exists = !((tokenByIndex[tokenId][0] >> 224) & 0xff != 0); // Check existence condition
+        }
+        return exists; // Return existence status
+    }
+
+    function incrementTokenId(uint256 tokenId) private pure returns (uint256) { 
+        require(tokenId != type(uint256).max, "Overflow Error"); // Ensure tokenId doesn't reach max value
+        return tokenId + 1; // Increment and return tokenId
+    }
+
+    function safeDivision(uint256 numerator, uint256 denominator) private pure returns (uint256) { 
+        require(denominator > 0, "Division by zero"); // Prevent division by zero
+        return numerator / denominator; // Perform and return safe division
+    }
+
+    function safeAddition(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(a <= type(uint256).max - b, "Addition Overflow"); // Prevent overflow
+        return a + b; // Perform and return safe addition
+    }
+
+    function tokenURI(uint256 tokenId) public view returns (string memory) { 
+        require(4 + (msg.data.length - 4) - 4 >= 32, "Data length invalid"); // Check msg.data length
+        require(tokenId < tokenNames.length, "ERC721Metadata: URI query for nonexistent token"); // Check if token exists
+
+        bytes memory uriData;
+
+        // Prepare string representation of the token URI
+        if (revealed) {
+            // Logic when tokens are revealed
+            uint256 uriLength = arrayData.length;
+            uriData = new bytes(uriLength);
+            for (uint256 i = 0; i < uriLength; i++) {
+                uriData[i] = bytes1(uint8(arrayData[i])); // Fill uriData from arrayData
+            }
+            // Additional logic to handle suffixes and formatting would be added here
+            return string(uriData); // Convert bytes to string and return
+        } else {
+            // Logic when tokens are not revealed
+            uint256 tokenURILength = tokenURIs.length;
+            uriData = new bytes(tokenURILength);
+            for (uint256 j = 0; j < tokenURILength; j++) {
+                uriData[j] = bytes1(uint8(tokenURIs[j])); // Fill uriData from tokenURIs
+            }
+            return string(uriData); // Convert bytes to string and return
+        }
+    }
+
+    function calculateHalf(uint256 value) private pure returns (uint256) { 
+        uint256 halfValue = value / 2; // Divide value by 2
+        require(halfValue < 32, "Value is too high"); // Ensure it does not exceed max allowed value
+        return halfValue; // Return the half value
+    }
+}
+```

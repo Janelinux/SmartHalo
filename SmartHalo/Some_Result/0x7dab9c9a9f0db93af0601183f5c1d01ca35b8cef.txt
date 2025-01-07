@@ -1,0 +1,70 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract IDO {
+    // State Variables
+    uint256 private goalAmount; // The name of the corresponding state variable before the modification: _goalAmount
+    uint256 private soldAmount; // The name of the corresponding state variable before the modification: _soldAmount
+    uint256 private minAmount; // The name of the corresponding state variable before the modification: _minAmount
+    uint256 private maxAmount; // The name of the corresponding state variable before the modification: _maxAmount
+    uint256 private salePrice; // The name of the corresponding state variable before the modification: _salePrice
+    uint256 private openIdo; // The name of the corresponding state variable before the modification: _openIdo
+    address private owner; // The name of the corresponding state variable before the modification: _owner
+    IERC20 private usdc; // The name of the corresponding state variable before the modification: _usdc
+    mapping(address => uint256) private bought; // The name of the corresponding state variable before the modification: _bought
+
+    // Events
+    event Initialized(uint8 indexed version);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Optimized Multiplier Function 
+    function safeMultiply(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b == 0 || a <= type(uint256).max / b, "Panic: Multiplication Overflow");
+        return a * b;
+    }
+  
+    // Purchase Function
+    function purchase(uint256 amount) public payable {
+        require(amount > 0, "Invalid amount provided"); // Ensuring positive amount
+        require(openIdo == 1, "IDO is closed"); // Check if IDO is open
+        
+        uint256 newSoldAmount = safeAdd(soldAmount, amount); // Use safe addition for sold amount
+        require(newSoldAmount <= goalAmount, "The amount entered exceeds IDO Goal");
+        
+        uint256 paymentAmount = safeMultiply(salePrice, amount); // Calculate payment based on sale price
+        uint256 usdcAmount = safeMultiply(1e6, paymentAmount); // Assuming salePrice is denominated in 6 decimals
+
+        uint256 totalBought = safeAdd(bought[msg.sender], usdcAmount); // Total bought by user
+        require(totalBought <= maxAmount, "Above Presale allocation");
+        require(totalBought >= minAmount, "Below Presale allocation");
+
+        // Check if the contract has enough balance to perform transactions
+        require(address(this).balance > 0, "Address: insufficient balance for call");
+        
+        // If usdc is a contract, perform transferFrom
+        require(address(usdc) != address(0), "Address: invalid token contract");
+        
+        (bool success, bytes memory returnData) = address(usdc).call(
+            abi.encodeWithSignature("transferFrom(address,address,uint256)", msg.sender, address(this), amount)
+        );
+
+        require(success, "SafeERC20: low-level call failed");
+
+        // Store the amount bought
+        bought[msg.sender] = totalBought; // Update user's bought amount
+    }
+  
+    // Optimized Addition Function
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a + b >= a, "Panic: Addition Overflow");
+        return a + b;
+    }
+    
+    // Interface to interact with the ERC20 Token
+    interface IERC20 {
+        function transferFrom(address from, address to, uint256 value) external returns (bool);
+        function balanceOf(address account) external view returns (uint256);
+    }
+}
+```

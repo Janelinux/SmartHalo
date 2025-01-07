@@ -1,0 +1,15 @@
+```solidity
+// State variable to store the address of the contract implementation
+uint256 private fallbackAddress; // The name of the corresponding state variable before the modification:_fallback
+
+/**
+ * @dev Retrieves the address of the contract implementation.
+ * This function is marked as public and non-payable, meaning it can be called externally
+ * but cannot accept Ether. The implementation function returns the stored fallback address.
+ * 
+ * @return uint256 The address of the implementation contract.
+ */
+function getImplementationAddress() public view returns (uint256) { // Changed function name for clarity
+    return fallbackAddress; // Return the stored implementation address
+}
+```

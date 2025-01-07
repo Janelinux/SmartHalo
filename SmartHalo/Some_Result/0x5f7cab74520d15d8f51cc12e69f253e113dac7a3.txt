@@ -1,0 +1,27 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.15;
+
+contract OptimizedContract {
+    // State Variables
+    uint256[] public names; //The name of the corresponding state variable before the modification:_name
+    uint256[] public symbols; //The name of the corresponding state variable before the modification:_symbol
+    mapping(uint256 => string) public tokenURIs; //The name of the corresponding state variable before the modification:_tokenURI
+    mapping(uint256 => address) public owners; //The name of the corresponding state variable before the modification:owner_3
+    mapping(uint256 => address) public approvals; //The name of the corresponding state variable before the modification:_approve
+    mapping(uint256 => mapping(address => bool)) public isApprovedForAll; //The name of the corresponding state variable before the modification:_isApprovedForAll
+    mapping(uint256 => uint256) public tokensOfOwnerByIndex; //The name of the corresponding state variable before the modification:_tokenOfOwnerByIndex
+    uint256[] public totalSupplies; //The name of the corresponding state variable before the modification:_totalSupply
+    mapping(uint256 => uint256) public additionalData; //The name of the corresponding state variable before the modification:map_9
+    uint256 public storageValue; //The name of the corresponding state variable before the modification:stor_b
+    uint256[] public baseURIs; //The name of the corresponding state variable before the modification:_baseURI
+    uint256[] public baseExtensions; //The name of the corresponding state variable before the modification:_baseExtension
+    uint256 public currentEvent; //The name of the corresponding state variable before the modification:_curEvent
+    bool[] public isMinted; //The name of the corresponding state variable before the modification:_isMinted
+    address public contractOwner; //The name of the corresponding state variable before the modification:_owner
+    address public minter; //The name of the corresponding state variable before the modification:_minter
+
+    // Events
+    event Approval(address indexed owner, address indexed approved);
+}
+```

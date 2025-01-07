@@ -1,0 +1,100 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+contract OptimizedContract {
+    // State Variables
+    mapping (address => uint256) public balanceOf; //The name of the corresponding state variable before the modification:_balanceOf
+    mapping (address => mapping (address => uint256)) public allowance; //The name of the corresponding state variable before the modification:_allowance
+    mapping (address => bool) public botStatus; //The name of the corresponding state variable before the modification:_isBot
+    mapping (address => uint256) public ownerLastTransferBlock; //The name of the corresponding state variable before the modification:owner_5
+    bool public transferDelayEnabled; //The name of the corresponding state variable before the modification:_transferDelayEnabled
+    
+    uint256 public maxTransactionAmount; //The name of the corresponding state variable before the modification:__maxTxAmount
+    uint256 public maxWalletSize; //The name of the corresponding state variable before the modification:__maxWalletSize
+    uint256 public taxSwapThreshold; //The name of the corresponding state variable before the modification:__taxSwapThreshold
+    uint256 public maxTaxSwap; //The name of the corresponding state variable before the modification:__maxTaxSwap
+    uint256 public ownerData; //The name of the corresponding state variable before the modification:owner_14
+    address public contractOwner; //The name of the corresponding state variable before the modification:_owner
+    bool public manualSwap; //The name of the corresponding state variable before the modification:_manualSwap
+    address private wethContract; //The name of the corresponding state variable before the modification:stor_13_0_19
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event MaxTxAmountUpdated(uint256 previousMaxTxAmount, uint256 newMaxTxAmount);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Safe multiplication function
+    function safeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a == 0 || (b <= type(uint256).max / a), "Multiplication overflow");
+        return a * b;
+    }
+
+    // Safe subtraction function to prevent underflow
+    function safeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b <= a, "Subtraction overflow");
+        return a - b;
+    }
+
+    // Safe addition function to prevent overflow
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b <= type(uint256).max - a, "Addition overflow");
+        return a + b;
+    }
+
+    // Transfer function
+    function transfer(address to, uint256 amount) public {
+        require(to != address(0), "Transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+
+        // Perform transfer logic
+        _transfer(msg.sender, to, amount);
+    }
+
+    // Internal transfer function
+    function _transfer(address from, address to, uint256 amount) private {
+        require(from != address(0), "Transfer from the zero address");
+        require(to != address(0), "Transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+
+        balanceOf[from] = safeSub(balanceOf[from], amount);
+        balanceOf[to] = safeAdd(balanceOf[to], amount);
+        
+        emit Transfer(from, to, amount);
+    }
+
+    // Transfer from function
+    function transferFrom(address from, address to, uint256 amount) public {
+        require(msg.data.length >= 96, "Insufficient data length"); // Ensured to match the requirement for size
+        require(from != address(0), "Transfer from the zero address");
+        require(to != address(0), "Transfer to the zero address");
+
+        uint256 currentAllowance = allowance[from][msg.sender];
+        uint256 transferAmount = safeSub(amount, currentAllowance); // Aligning the types based on the allowances, if needed
+
+        // Type consistency based on previous notes
+        bool validTransfer = transferAmount <= currentAllowance;
+        require(validTransfer, "ERC20: transfer amount exceeds allowance");
+
+        allowance[from][msg.sender] = safeSub(currentAllowance, amount);
+        _transfer(from, to, amount);
+    }
+
+    // Approval function
+    function approve(address spender, uint256 amount) public {
+        require(spender != address(0), "Approve to the zero address");
+        allowance[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+    }
+
+    // Function for updating the maximum transaction amount
+    function updateMaxTxAmount(uint256 newMaxTxAmount) public {
+        require(msg.sender == contractOwner, "Only the owner can update maximum transaction amount");
+        emit MaxTxAmountUpdated(maxTransactionAmount, newMaxTxAmount);
+        maxTransactionAmount = newMaxTxAmount;
+    }
+
+    // Additional functions and logic can be added here as necessary
+}
+```

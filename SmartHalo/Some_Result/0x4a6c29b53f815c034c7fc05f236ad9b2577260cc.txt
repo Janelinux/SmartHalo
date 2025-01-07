@@ -1,0 +1,73 @@
+```solidity
+pragma solidity ^0.8.17;
+
+// Contract definition
+contract OptimizedContract {
+    // State variables
+    mapping (address => uint256) public reflections; // The name of the corresponding state variable before the modification: owner_2
+    mapping (address => mapping (address => uint256)) public allowance; // The name of the corresponding state variable before the modification: _allowance
+    mapping (address => bool) public blacklistedAccounts; // The name of the corresponding state variable before the modification: _bots
+    uint256 public totalReflections; // The name of the corresponding state variable before the modification: stor_6
+    uint256 public maxTransactionAmount; // The name of the corresponding state variable before the modification: __maxTxAmount
+    uint256 public maxWalletSize; // The name of the corresponding state variable before the modification: __maxWalletSize
+    uint256 public swapTokensAtAmount; // The name of the corresponding state variable before the modification: __swapTokensAtAmount
+    address public owner; // The name of the corresponding state variable before the modification: _owner
+    address public uniswapV2Router; // The name of the corresponding state variable before the modification: _uniswapV2Router
+    address public uniswapV2Pair; // The name of the corresponding state variable before the modification: _uniswapV2Pair
+    bool public tradingEnabled; // The name of the corresponding state variable before the modification: stor_15_20_20
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Internal functions
+    function calculateReflections(uint256 amount, uint256 totalSupply) internal view returns (uint256) {
+        require(totalSupply != 0, "Cannot divide by zero");
+        return (amount * totalReflections) / totalSupply;
+    }
+
+    function safeMultiply(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(a == 0 || (a * b) / a == b, "Multiplication overflow");
+        return a * b;
+    }
+
+    function safeDivide(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b != 0, "Division by zero");
+        return a / b;
+    }
+
+    function safeSubtract(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(a >= b, "Subtraction overflow");
+        return a - b;
+    }
+
+    function safeAdd(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(a + b >= a, "Addition overflow");
+        return a + b;
+    }
+
+    // Transfer function
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(msg.data.length >= 100, "Insufficient data length"); // Ensure proper data length for transfer
+        require(recipient != address(0), "Cannot transfer to zero address");
+        
+        // Perform reflection calculations using safe methods
+        reflections[msg.sender] = safeSubtract(reflections[msg.sender], amount);
+        reflections[recipient] = safeAdd(reflections[recipient], amount);
+        emit Transfer(msg.sender, recipient, amount);
+        return true;
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        require(msg.data.length >= 100, "Insufficient data length"); // Ensure proper data length for transferFrom
+        require(sender != address(0), "Cannot transfer from zero address");
+        require(recipient != address(0), "Cannot transfer to zero address");
+        
+        allowance[sender][msg.sender] = safeSubtract(allowance[sender][msg.sender], amount);
+        reflections[sender] = safeSubtract(reflections[sender], amount);
+        reflections[recipient] = safeAdd(reflections[recipient], amount);
+        emit Transfer(sender, recipient, amount);
+        return true;
+    }
+}
+```

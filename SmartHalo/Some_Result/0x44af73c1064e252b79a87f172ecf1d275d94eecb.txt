@@ -1,0 +1,76 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+// Struct representing ownership information
+struct Ownership {
+    address owner; // The owner address
+    uint64 startTimestamp; // The timestamp of ownership start
+    bool burned; // Indicates if the token has been burned
+    uint24 extraData; // Additional data associated with the ownership
+}
+
+// Main contract class
+contract ImprovedContract {
+    uint256 private _explicitOwnershipsCount; // The total number of explicit ownerships
+    uint256 private _totalSupply; // The total supply of tokens
+    uint256[] private _mintedTokenIds; // List of minted token IDs
+    uint256[] private _userTokenIds; // List of user-associated token IDs
+    mapping(uint256 => uint256) private _tokenOwnership; // Mapping for token ownership
+    mapping(uint256 => uint256) private _numberMinted; // Mapping to track the number of tokens minted by each user
+    mapping(uint256 => uint256) private _approval; // Mapping for token approvals
+    mapping(uint256 => mapping(uint256 => uint256)) private _approvedForAll; // Mapping for all approvals
+    mapping(uint256 => uint256) private _userExpiration; // Mapping for user expiration
+    uint256 private _withdrawalAmount; // Amount to withdraw
+    mapping(uint256 => uint256) private _royaltyInfo; // Mapping for royalty information
+    uint256[] private _payoutAddresses; // List of payout addresses
+    uint256[] private _basisPoints; // Basis points for distributions
+    uint256 private constant _MAX_SUPPLY = 10000; // Maximum token supply
+    uint256 private _mintFee; // Fee per token to mint
+    uint256 private _maxMintsPerAddress; // Max mints allowed per address
+    uint256 private _maxMintsPerTransaction; // Max mints allowed per transaction
+    uint256 private _publicMintPrice; // Price for public minting
+    bool private _isPublicSaleActive; // Flag for public sale status
+    bool private _metadataFrozen; // Flag for metadata freeze status
+    bool private _payoutAddressesFrozen; // Flag for payout addresses freeze status
+    address private _owner; // Owner of the contract
+
+    // Events
+    event UpdateUser(uint256 indexed tokenId, address indexed user, uint64 timestamp);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+    event Unpaused(address account);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Paused(address account);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    
+    // Function to get explicit ownerships of the given token IDs
+    function explicitOwnershipsOf(uint256[] memory tokenIds) public view returns (Ownership[] memory) {
+        require(tokenIds.length > 0, "Token IDs cannot be empty.");
+        require(tokenIds.length <= _MAX_SUPPLY, "Too many token IDs requested.");
+        
+        Ownership[] memory ownerships = new Ownership[](tokenIds.length);
+        
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            require(tokenIds[i] < _explicitOwnershipsCount, "Owner query for nonexistent token.");
+            ownerships[i] = getOwnershipDetails(tokenIds[i]);
+        }
+        
+        return ownerships;
+    }
+    
+    // Function to retrieve ownership details of a specific token
+    function getOwnershipDetails(uint256 tokenId) private view returns (Ownership memory) {
+        uint256 ownershipData = _tokenOwnership[tokenId];
+        require(ownershipData != 0, "Owner query for nonexistent token.");
+
+        Ownership memory ownership;
+        ownership.owner = address(uint160(ownershipData));
+        ownership.startTimestamp = uint64(ownershipData >> 160);
+        ownership.burned = (ownershipData & 0x100000000000000000000000000000000000000000000000000000000) != 0;
+        ownership.extraData = uint24(ownershipData >> 232);
+
+        return ownership;
+    }
+}
+```

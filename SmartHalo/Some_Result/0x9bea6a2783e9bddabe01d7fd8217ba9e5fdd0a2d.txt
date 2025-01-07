@@ -1,0 +1,81 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    // State Variables
+    string[] internal contractURIs; // STORAGE[0x1] // The name of the corresponding state variable before the modification:_contractURI
+    string[] internal tokenURIs; // STORAGE[0x2] // The name of the corresponding state variable before the modification:_tokenURI
+    uint256 internal totalSupply; // STORAGE[0x3] // The name of the corresponding state variable before the modification:_totalSupply
+    mapping (uint256 => uint256[]) internal mappingData; // STORAGE[0x4] // The name of the corresponding state variable before the modification:map_4
+    mapping (uint256 => uint256[]) internal balances; // STORAGE[0x5] // The name of the corresponding state variable before the modification:_balanceOf
+    mapping (uint256 => uint256[]) internal approvedAddresses; // STORAGE[0x6] // The name of the corresponding state variable before the modification:_approve
+    mapping (uint256 => uint256[]) internal approvalForAll; // STORAGE[0x7] // The name of the corresponding state variable before the modification:_isApprovedForAll
+    address internal withdrawAddress; // STORAGE[0x0] // The name of the corresponding state variable before the modification:_withdraw
+
+    // Events
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Internal function to calculate value
+    function _calculateValue(uint256 inputValue) private pure returns (uint256) {
+        uint256 shiftedValue = inputValue >> 1;
+        uint256 remainder = inputValue & 0x1;
+        if (remainder == 0) {
+            shiftedValue = inputValue & 0x7f;
+        }
+        require(remainder - (shiftedValue < 32) == 0, "Panic: Invalid Calculation");
+        return shiftedValue;
+    }
+
+    // Public function to set data
+    function setData(string memory newContractURI, string memory newTokenURI) public {
+        require(msg.data.length >= 4 + 64, "Invalid data length");
+        // Ensure newContractURI can be converted to bytes without overflow
+        require(bytes(newContractURI).length <= type(uint64).max, "URI length overflow");
+        require(4 + bytes(newContractURI).length + 31 < msg.data.length, "Invalid offset for Contract URI");
+
+        // Append the new contract URI to the storage
+        bytes memory contractURIBytes = abi.encodePacked(newContractURI);
+        require(contractURIBytes.length <= type(uint64).max, "URI bytes overflow");
+        
+        // Copy to storage
+        uint256 currentContractCount = _calculateValue(contractURIs.length);
+        _copyToStorage(contractURIBytes, contractURIs, currentContractCount);
+
+        require(bytes(newTokenURI).length <= type(uint64).max, "URI length overflow");
+        require(4 + bytes(newTokenURI).length + 31 < msg.data.length, "Invalid offset for Token URI");
+        
+        // Append the new token URI to the storage
+        bytes memory tokenURIBytes = abi.encodePacked(newTokenURI);
+        require(tokenURIBytes.length <= type(uint64).max, "URI bytes overflow");
+
+        uint256 currentTokenCount = _calculateValue(tokenURIs.length);
+        _copyToStorage(tokenURIBytes, tokenURIs, currentTokenCount);
+    }
+
+    // Internal function to copy data to storage
+    function _copyToStorage(bytes memory data, string[] storage array, uint256 currentLength) internal {
+        if (currentLength > 31) {
+            uint256 end = (currentLength + 31) >> 5;
+            for (uint256 i = 0; i < end; i++) {
+                assembly {
+                    sstore(add(array.slot, i), 0)
+                }
+            }
+        }
+        uint256 length = 32; // Start writing from the next available slot
+        uint256 dataIndex = 0;
+        
+        while (dataIndex < data.length) {
+            assembly {
+                sstore(add(array.slot, length), mload(add(data, add(dataIndex, 32)))) // Store each 32 bytes chunk
+            }
+            length++;
+            dataIndex += 32;
+        }
+        array.push(""); // Update the array length correctly
+    }
+}
+```

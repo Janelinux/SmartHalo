@@ -1,0 +1,125 @@
+```solidity
+// Decompiled by library.dedaub.com
+// 2022.11.19 07:05 UTC
+// Data structures and variables inferred from the use of storage instructions
+
+pragma solidity ^0.8.0;
+
+contract FineTunedContract {
+    uint256 totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    uint256[] tokenNames; // The name of the corresponding state variable before the modification:_name
+    uint256[] tokenSymbols; // The name of the corresponding state variable before the modification:_symbol
+    mapping (uint256 => uint256) walletOfOwner; // The name of the corresponding state variable before the modification:_walletOfOwner
+    mapping (uint256 => uint256) balanceOf; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping (uint256 => uint256) approvedTokens; // The name of the corresponding state variable before the modification:_approve
+    mapping (uint256 => uint256) isApprovedForAll; // The name of the corresponding state variable before the modification:_isApprovedForAll
+    uint256 merkleRoot; // The name of the corresponding state variable before the modification:_merkleRoot
+    mapping (uint256 => uint256) whitelistClaimed; // The name of the corresponding state variable before the modification:_whitelistClaimed
+    uint256[] uriPrefix; // The name of the corresponding state variable before the modification:_uriPrefix
+    uint256[] uriSuffix; // The name of the corresponding state variable before the modification:_uriSuffix
+    uint256[] hiddenMetadataUri; // The name of the corresponding state variable before the modification:_hiddenMetadataUri
+    uint256 mintCost; // The name of the corresponding state variable before the modification:_cost
+    uint256 maxSupply; // The name of the corresponding state variable before the modification:_maxSupply
+    uint256 maxMintAmountPerTx; // The name of the corresponding state variable before the modification:_maxMintAmountPerTx
+    bool paused; // The name of the corresponding state variable before the modification:_paused
+    bool whitelistMintEnabled; // The name of the corresponding state variable before the modification:_whitelistMintEnabled
+    bool revealed; // The name of the corresponding state variable before the modification:_revealed
+    address owner; // The name of the corresponding state variable before the modification:_owner
+
+    // Events
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Approval(address indexed owner, address indexed approved, uint256 tokenId);
+    event Transfer(address indexed from, address indexed to, uint256 tokenId);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Function to safely divide two uint256 numbers
+    function SafeDiv(uint256 numerator, uint256 denominator) private pure returns (uint256) { 
+        require(denominator != 0, "Division by zero."); // Panic(18)
+        return numerator / denominator;
+    }
+
+    // Function to check if a token exists
+    function _isTokenExists(uint256 tokenId) private view returns (bool) { 
+        bool isValidId = (tokenId >= 1);
+        if (isValidId) {
+            isValidId = (tokenId < totalSupply);
+        }
+        if (!isValidId) {
+            return false;
+        } else {
+            return !(0xff & walletOfOwner[tokenId] >> 224);
+        }
+    }
+
+    // Function to get the token URI based on tokenId
+    function _getTokenURI(uint256 tokenId) private view returns (bytes memory) { 
+        bool tokenExists = _isTokenExists(tokenId);
+        require(tokenExists, "ERC721Metadata: URI query for nonexistent token");
+        
+        if (revealed) {
+            uint256 prefixLength = uriPrefix.length; // uint256 type
+            bytes memory prefixData = new bytes(prefixLength); // bytes type
+            for (uint256 i = 0; i < prefixLength; i++) { // uint256 type
+                prefixData[i] = bytes1(uint8(uriPrefix[i]));
+            }
+            
+            // Creating the final token URI and return it.
+            uint256 uriAmount = _getTokenAmount(tokenId); // uint256 type
+            return abi.encodePacked(prefixData, uriAmount);
+        } else {
+            uint256 hiddenUriLength = hiddenMetadataUri.length; // uint256 type
+            bytes memory hiddenData = new bytes(hiddenUriLength); // bytes type
+            for (uint256 j = 0; j < hiddenUriLength; j++) { // uint256 type
+                hiddenData[j] = bytes1(uint8(hiddenMetadataUri[j]));
+            }
+            return hiddenData;
+        }
+    }
+
+    // Function to calculate the amount of tokens based on a value
+    function _getTokenAmount(uint256 value) private pure returns (uint256) { 
+        if (value == 0) {
+            return 0;
+        } else {
+            uint256 count = 0; // uint256 type
+            while (value > 0) {
+                count++;
+                value = SafeDiv(value, 10);
+            }
+            require(count <= 0xffffffffffffffff, "Count exceeds maximum value."); // Panic(65)
+            return count;
+        }
+    }
+
+    // Function to safely add two uint256 numbers
+    function SafeAdd(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(a <= type(uint256).max - b, "Addition overflow"); // Panic(17)
+        return a + b;
+    }
+
+    // Main function to get the token URI publicly
+    function tokenURI(uint256 tokenId) public view returns (bytes memory) { 
+        require(msg.data.length - 4 >= 32, "Invalid data length"); // msg.data is of type bytes
+        bytes memory uriData = _getTokenURI(tokenId);
+        
+        return uriData;
+    }
+
+    // Function to increment a uint256 value
+    function _increment(uint256 value) private pure returns (uint256) { 
+        require(value != type(uint256).max, "Overflow error."); // Panic(17)
+        return value + 1;
+    }
+
+    // Function to calculate half and check conditions
+    function _halfCheck(uint256 value) private pure returns (uint256) { 
+        uint256 halfValue = value >> 1; // uint256 type
+        uint256 remainder = value & 0x1; 
+        if (remainder == 0) {
+            halfValue = halfValue & 0x7f; // uint256 type
+        }
+        require(remainder != (halfValue < 32), "Overflow error."); // Panic(34)
+        return halfValue; 
+    }
+}
+```

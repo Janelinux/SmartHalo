@@ -1,0 +1,112 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract RoyaltyContract {
+    uint256[] private tokenNames; // STORAGE[0x0]
+    uint256[] private tokenSymbols; // STORAGE[0x1]
+    uint256[] private baseURIs; // STORAGE[0x2]
+    mapping (uint256 => uint256) private tokenToName; // STORAGE[0x3]
+    mapping (uint256 => uint256) private tokenToIPFSHash; // STORAGE[0x4]
+    mapping (uint256 => uint256) private tokenRoyaltyInfo; // STORAGE[0x5]
+    mapping (uint256 => uint256) private userBalance; // STORAGE[0x6]
+    mapping (uint256 => uint256) private approvalMapping; // STORAGE[0x8]
+    uint256[] private creators; // STORAGE[0x9]
+    mapping (uint256 => uint256) private percentageRoyalties; // STORAGE[0xa]
+    mapping (uint256 => uint256) private pendingRoyaltyPayments; // STORAGE[0xb]
+    mapping (uint256 => uint256) private initializeRoyaltiesMap; // STORAGE[0xc]
+    mapping (uint256 => uint256) private mintCount; // STORAGE[0xd]
+    mapping (uint256 => uint256) private finalizedMapping; // STORAGE[0xe]
+
+    // Events
+    event PaymentReleased(address indexed receiver, uint256 amount);
+    event ConsecutiveTransfer(uint256 fromTokenId, uint256 toTokenId, address from, address to);
+    event RoyaltyReceiverUpdated(uint256 tokenId, address previousReceiver, address newReceiver);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event ERC20PaymentReleased(address indexed tokenAddress, address indexed to, uint256 amount);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Function to get the royalty receiver or pending payments for a given token id
+    function getRoyaltyReceiver(uint256 tokenId) private view returns (address) { 
+        // Check if `initializeRoyaltiesMap` for tokenId is a contract
+        if (initializeRoyaltiesMap[tokenId] == 0) {
+            // If there's no initialized royalty, check for pending payments 
+            if (pendingRoyaltyPayments[tokenId] == 0) {
+                return address(0);
+            } else {
+                return address(uint160(pendingRoyaltyPayments[tokenId]));
+            }
+        } else {
+            // If initialized, return the initialized royalty address
+            return address(uint160(initializeRoyaltiesMap[tokenId]));
+        }
+    }
+
+    // Function to initialize royalties with given parameters
+    function initializeRoyalties(address royaltyReceiver, uint256 tokenId, address[] memory receiverAddresses, uint256[] memory royaltyPercentages) public payable { 
+        // Basic validation checks for input data length
+        require(msg.data.length >= 128 + 4);
+        require(royaltyReceiver != address(0));
+
+        // Validation to ensure receiverAddresses and royaltyPercentages sizes are compliant
+        require(receiverAddresses.length <= 0xffffffffffffffff);
+        require(royaltyPercentages.length <= 0xffffffffffffffff);
+
+        // Check gas limits against provided data
+        uint256 offset = 4 + receiverAddresses.length + 32;
+        require(msg.data.length >= offset + 32);
+
+        address previousReceiver = getRoyaltyReceiver(tokenId);
+        
+        // Handle allocation depending on the number of receiver addresses
+        if (receiverAddresses.length != 1) {
+            initializeRoyaltiesMap[tokenId] &= ~uint256(0xffffffffffffffffffffffffffffffffffffffff);
+            
+            // Create new royalty contract
+            bytes memory creationData = abi.encodePacked(0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000, royaltyReceiver << 96, 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000);
+            address newRoyaltyContract;
+            assembly {
+                newRoyaltyContract := create(0, add(creationData, 0x20), 55)
+            }
+            require(newRoyaltyContract != address(0), "ERC1167: create failed");
+
+            // Prepare data to initialize the new contract
+            address[] memory localization = new address[](receiverAddresses.length);
+            for (uint256 i = 0; i < receiverAddresses.length; i++) {
+                require(receiverAddresses[i] != address(0));
+                localization[i] = receiverAddresses[i]; // type consistency with receiverAddresses[i]
+            }
+            require(royaltyPercentages.length <= 0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+
+            // Call the new contract's initialize method
+            (bool initializeSuccess, ) = newRoyaltyContract.call(abi.encodeWithSignature("initialize(address[],uint256[])", localization, royaltyPercentages));
+            require(initializeSuccess, "Failed to initialize new royalty contract");
+
+            // Update pending payments with the new contract address
+            pendingRoyaltyPayments[tokenId] = uint256(uint160(newRoyaltyContract)) | ~uint256(0xffffffffffffffffffffffffffffffffffffffff) & pendingRoyaltyPayments[tokenId];
+        } else {
+            require(receiverAddresses.length > 0, "Receiver address length must be greater than 0");
+            require(receiverAddresses[0] != address(0));
+
+            // Handle a single receiver
+            initializeRoyaltiesMap[tokenId] = ~uint256(0xffffffffffffffffffffffffffffffffffffffff) & initializeRoyaltiesMap[tokenId] | uint256(uint160(receiverAddresses[0]));
+            pendingRoyaltyPayments[tokenId] = ~uint256(0xffffffffffffffffffffffffffffffffffffffff) & pendingRoyaltyPayments[tokenId];
+        }
+        emit RoyaltyReceiverUpdated(tokenId, previousReceiver, receiverAddresses[0]);
+    }
+
+    // Function to check if a specific interface is supported
+    function supportsInterface(bytes4 interfaceId) public view returns (bool) { 
+        require(interfaceId != 0, "Invalid interface ID");
+        require(interfaceId & ~0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff == 0);
+
+        bool isSupported = (0x2a55205a == interfaceId);
+        if (0x2a55205a != interfaceId) {
+            isSupported = (0x80ac58cd == interfaceId) || (0x5b5e139f == interfaceId);
+        }
+
+        return isSupported;
+    }
+}
+```

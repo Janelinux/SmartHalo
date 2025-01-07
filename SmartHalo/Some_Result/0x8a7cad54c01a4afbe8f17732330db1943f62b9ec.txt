@@ -1,0 +1,18 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract ExampleContract {
+
+    // This state variable holds the address of the current implementation contract 
+    // used in a proxy pattern. It allows the proxy to delegate calls to another contract.
+    address private implementationAddress; // The name of the corresponding state variable before the modification:_fallback
+
+    // Function to retrieve the address of the current implementation contract.
+    // It is marked as public, meaning it can be called from other contracts or externally.
+    // The 'view' modifier indicates that this function does not modify the state of the contract.
+    function getImplementationAddress() public view returns (address) { 
+        return implementationAddress; // Returns the address of the implementation contract
+    }
+}
+```

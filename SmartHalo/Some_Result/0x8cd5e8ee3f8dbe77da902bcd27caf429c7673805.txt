@@ -1,0 +1,32 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedToken {
+    // Mapping of balances and allowances for addresses
+    mapping(address => uint256) private _balanceOf; // STORAGE[0x0] - The name of the corresponding state variable before the modification:_balanceOf 
+    mapping(address => mapping(address => uint256)) private _allowance; // STORAGE[0x1] - The name of the corresponding state variable before the modification:_allowance 
+    uint256 private _totalSupply; // STORAGE[0x2] - The name of the corresponding state variable before the modification:_totalSupply 
+    string private _name; // STORAGE[0x3] - The name of the corresponding state variable before the modification:_name 
+    string private _symbol; // STORAGE[0x4] - The name of the corresponding state variable before the modification:_symbol 
+
+    // Events
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Function to return the symbol of the token
+    function getSymbol() public view returns (string memory) { 
+        return _symbol; // Return the symbol string
+    }
+
+    // Helper function for internal use
+    function calculateValue(uint256 inputValue) private pure returns (uint256) { 
+        uint256 halfValue = inputValue >> 1; // Right shift to get half
+        uint256 isOdd = inputValue & 0x1; // Get remainder to check if odd
+
+        // Ensure the half value does not exceed the maximum limit
+        require(isOdd != (halfValue < 32), "Value exceeds limit"); 
+        return halfValue; // Return the calculated value
+    }
+}
+```

@@ -1,0 +1,85 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract FineTunedContract {
+    // State variable mappings to track balances and allowances
+    mapping(address => uint256) private balances;  // The name of the corresponding state variable before the modification:_balanceOf
+    mapping(address => mapping(address => uint256)) private allowances;  // The name of the corresponding state variable before the modification:_allowance
+    uint256 private totalSupply;  // The name of the corresponding state variable before the modification:_totalSupply
+    string private name;  // The name of the corresponding state variable before the modification:_name
+    string private symbol;  // The name of the corresponding state variable before the modification:_symbol
+    mapping(address => bool) private frozenAccounts;  // The name of the corresponding state variable before the modification:owner_8
+    uint256 private freezeThreshold;  // The name of the corresponding state variable before the modification:stor_9
+    uint256 private mintingCap;  // The name of the corresponding state variable before the modification:stor_a
+    uint8 private decimals;  // The name of the corresponding state variable before the modification:_decimals
+    address private governanceAddress;  // The name of the corresponding state variable before the modification:owner_2_0_19
+    address private treasuryAddress;  // The name of the corresponding state variable before the modification:owner_7_0_19
+
+    // Events
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Safely subtracts two uint256 numbers.
+     */
+    function safeSubtract(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b <= a, "SafeMath: subtraction overflow");
+        return a - b;
+    }
+
+    /**
+     * @dev Transfers tokens from sender to recipient.
+     */
+    function transfer(address to, uint256 amount) public {
+        require(msg.data.length >= 96, "Invalid data length"); // Ensuring data length is valid
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(balances[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
+
+        // Updating balances
+        balances[msg.sender] = safeSubtract(balances[msg.sender], amount);
+        balances[to] += amount;
+
+        emit Transfer(msg.sender, to, amount);
+    }
+
+    /**
+     * @dev Internal function to handle transfers including checks for frozen accounts.
+     */
+    function handleTransfer(uint256 amount, address to, address from) private {
+        require(!frozenAccounts[from], "Transfer from frozen account is not allowed");
+        require(amount <= balances[from], "Insufficient balance");
+
+        // Execute the transfer
+        balances[from] = safeSubtract(balances[from], amount);
+        balances[to] += amount;
+
+        emit Transfer(from, to, amount);
+    }
+
+    /**
+     * @dev Bulk transfer to multiple addresses.
+     */
+    function multiTransfer(uint256 numAddresses, address[] calldata recipients, uint256[] calldata amounts) public {
+        require(msg.data.length >= 96, "Invalid data length"); // Ensuring data length is valid
+        require(recipients.length == amounts.length, "Addresses and amounts length mismatch");
+        require(numAddresses <= 100, "Too many addresses"); // Limiting to 100 transfers for gas efficiency
+
+        for (uint256 i = 0; i < numAddresses; i++) {
+            handleTransfer(amounts[i], recipients[i], msg.sender);
+        }
+    }
+
+    /**
+     * @dev Transfer tokens on behalf of an owner.
+     */
+    function transferFrom(address from, address to, uint256 amount) public {
+        require(msg.data.length >= 96, "Invalid data length"); // Ensuring data length is valid
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(amount <= allowances[from][msg.sender], "ERC20: transfer amount exceeds allowance");
+
+        allowances[from][msg.sender] = safeSubtract(allowances[from][msg.sender], amount);
+        handleTransfer(amount, to, from);
+    }
+}
+```

@@ -1,0 +1,97 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    uint256 private totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    string[] private name; // The name of the corresponding state variable before the modification:_name
+    string[] private symbol; // The name of the corresponding state variable before the modification:_symbol
+    mapping (address => uint256[]) private tokenOfOwnerByIndex; // The name of the corresponding state variable before the modification:_tokenOfOwnerByIndex
+    mapping (address => uint256[]) private ownerTokens; // The name of the corresponding state variable before the modification:owner_4
+    mapping (uint256 => address) private approveMapping; // The name of the corresponding state variable before the modification:_approve
+    mapping (address => mapping(address => bool)) private isApprovedForAllMapping; // The name of the corresponding state variable before the modification:_isApprovedForAll
+    uint256 private storageValue; // The name of the corresponding state variable before the modification:stor_8
+    string private baseURI; // The name of the corresponding state variable before the modification:_baseURI
+    uint256 private price; // The name of the corresponding state variable before the modification:_price
+    uint256 private maxPerTx; // The name of the corresponding state variable before the modification:_maxPerTx
+    uint256 private maxPerFree; // The name of the corresponding state variable before the modification:_maxPerFree
+    uint256 private totalFree; // The name of the corresponding state variable before the modification:_totalFree
+    uint256 private maxSupply; // The name of the corresponding state variable before the modification:_maxSupply
+    bool private mintEnabled; // The name of the corresponding state variable before the modification:_mintEnabled
+    mapping (uint256 => bool) private mintMapping; // The name of the corresponding state variable before the modification:_mint
+    address private owner; // The name of the corresponding state variable before the modification:_owner
+
+    // Events
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Approval(address indexed owner, address indexed spender, uint256 tokenId);
+    event Transfer(address indexed from, address indexed to, uint256 tokenId);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    function safeDiv(uint256 numerator, uint256 denominator) private pure returns (uint256) {
+        require(denominator != 0, "SafeDiv: Division by zero");
+        return numerator / denominator;
+    }
+
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= type(uint256).max - b, "SafeAdd: Overflow");
+        return a + b;
+    }
+
+    function computeValue(uint256 input) private pure returns (uint256) {
+        uint256 result = input >> 1;
+        uint256 leastSignificantBit = input & 0x1;
+        if (leastSignificantBit == 0) {
+            result = result & 0x7f;
+        }
+        require(leastSignificantBit != result && result < 32, "ComputeValue: Invalid value");
+        return result;
+    }
+
+    function tokenURI(uint256 tokenId) public view returns (string memory) {
+        require(totalSupply > tokenId, "ERC721Metadata: URI query for nonexistent token");
+        require(msg.data.length >= 36, "Insufficient data"); // Using the length of msg.data as bytes is 36 bytes with 4 bytes of function selector
+
+        uint256 baseURILength = computeValue(bytes(baseURI).length);
+        require(baseURILength > 0, "No base URIs available");
+
+        bytes memory uriBytes = abi.encodePacked(baseURI); // Using bytes for encoding the string
+        uint256 length = uriBytes.length;
+
+        bytes memory completeURI = new bytes(length + 5);
+        for (uint256 i = 0; i < length; i++) {
+            completeURI[i] = uriBytes[i]; // Fill complete URI array with URI bytes
+        }
+
+        // Appending .json extension to the URI
+        bytes memory jsonExtension = ".json"; // Define json extension as bytes
+        for (uint256 j = 0; j < jsonExtension.length; j++) {
+            completeURI[length + j] = jsonExtension[j]; // Append json to the end of completeURI
+        }
+        
+        return string(completeURI); // Converting bytes back to string before returning
+    }
+
+    function convertToBytes(uint256 num) private pure returns (bytes memory) {
+        if (num == 0) {
+            bytes memory result = new bytes(1);
+            result[0] = '0';
+            return result;
+        }
+
+        uint256 temp = num;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+
+        bytes memory buffer = new bytes(digits);
+        while (num != 0) {
+            buffer[--digits] = bytes1(uint8(48 + num % 10));
+            num /= 10;
+        }
+        
+        return buffer;
+    }
+}
+```

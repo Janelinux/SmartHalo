@@ -1,0 +1,126 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract TokenContract {
+    // State Variables
+    mapping(address => uint256) public balances; // The name of the corresponding state variable before the modification: _balanceOf
+    mapping(address => mapping(address => uint256)) public allowances; // The name of the corresponding state variable before the modification: _allowance
+    uint256 public totalSupply; // The name of the corresponding state variable before the modification: _totalSupply
+    uint256[] public addressList_1; // The name of the corresponding state variable before the modification: array_3
+    uint256[] public addressList_2; // The name of the corresponding state variable before the modification: array_4
+    uint256 public maxTransactionAmount; // The name of the corresponding state variable before the modification: _maxTransactionAmount
+    uint256 public swapTokensAtAmount; // The name of the corresponding state variable before the modification: _swapTokensAtAmount
+    uint256 public maxWallet; // The name of the corresponding state variable before the modification: _maxWallet
+    uint256 public percentForLPBurn; // The name of the corresponding state variable before the modification: _percentForLPBurn
+    uint256 public lpBurnFrequency; // The name of the corresponding state variable before the modification: _lpBurnFrequency
+    uint256 public lastLpBurnTime; // The name of the corresponding state variable before the modification: _lastLpBurnTime
+    uint256 public manualBurnFrequency; // The name of the corresponding state variable before the modification: _manualBurnFrequency
+    uint256 public lastManualLpBurnTime; // The name of the corresponding state variable before the modification: _lastManualLpBurnTime
+    mapping(address => uint256) private ownerTransactionBlock; // The name of the corresponding state variable before the modification: owner_12
+    uint256 public buyTotalFees; // The name of the corresponding state variable before the modification: _buyTotalFees
+    uint256 public buyMarketingFee; // The name of the corresponding state variable before the modification: _buyMarketingFee
+    uint256 public buyLiquidityFee; // The name of the corresponding state variable before the modification: _buyLiquidityFee
+    uint256 public buyHeistVault; // The name of the corresponding state variable before the modification: _buyheistvault
+    uint256 public sellTotalFees; // The name of the corresponding state variable before the modification: _sellTotalFees
+    uint256 public sellMarketingFee; // The name of the corresponding state variable before the modification: _sellMarketingFee
+    uint256 public sellLiquidityFee; // The name of the corresponding state variable before the modification: _sellLiquidityFee
+    uint256 public sellHeistVault; // The name of the corresponding state variable before the modification: _sellheistvault
+    uint256 public tokensForMarketing; // The name of the corresponding state variable before the modification: _tokensForMarketing
+    uint256 public tokensForLiquidity; // The name of the corresponding state variable before the modification: _tokensForLiquidity
+    uint256 public tokensForDev; // The name of the corresponding state variable before the modification: _tokensForDev
+    mapping(address => bool) public isExcludedFromFees; // The name of the corresponding state variable before the modification: _isExcludedFromFees
+    mapping(address => bool) public isExcludedMaxTransactionAmount; // The name of the corresponding state variable before the modification: __isExcludedMaxTransactionAmount
+    mapping(address => bool) public automatedMarketMakerPairs; // The name of the corresponding state variable before the modification: _automatedMarketMakerPairs
+    bool public lpBurnEnabled; // The name of the corresponding state variable before the modification: _lpBurnEnabled
+    bool public limitsInEffect; // The name of the corresponding state variable before the modification: _limitsInEffect
+    bool public tradingActive; // The name of the corresponding state variable before the modification: _tradingActive
+    bool public swapEnabled; // The name of the corresponding state variable before the modification: _swapEnabled
+    bool public transferDelayEnabled; // The name of the corresponding state variable before the modification: _transferDelayEnabled
+    address public owner; // The name of the corresponding state variable before the modification: _owner
+    address public marketingWallet; // The name of the corresponding state variable before the modification: _marketingWallet
+    address public devWallet; // The name of the corresponding state variable before the modification: _devWallet
+
+    // Events
+    event DevWalletUpdated(address indexed previousDevWallet, address indexed newDevWallet);
+    event MarketingWalletUpdated(address indexed previousMarketingWallet, address indexed newMarketingWallet);
+    event ExcludeFromFees(address indexed account, bool isExcluded);
+    event ManualNukeLP();
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiquidity);
+    event AutoNukeLP();
+
+    // Safe Math Operations
+    function safeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        require(!(a == 0 || b == 0 || b > (type(uint256).max / a)), "Arithmetic overflow or underflow");
+        return a * b;
+    }
+
+    function safeDiv(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b > 0, "Division by zero");
+        return a / b;
+    }
+
+    function safeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a >= b, "Arithmetic overflow or underflow");
+        return a - b;
+    }
+
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= (type(uint256).max - b), "Arithmetic overflow or underflow");
+        return a + b;
+    }
+
+    // Transfer function
+    function transfer(address recipient, uint256 amount) public {
+        // Ensure sufficient data length from msg.data
+        require((4 + (msg.data.length - 4) - 4) >= 64, "Invalid data length");
+
+        // Ensure the transfer is valid
+        require(amount > 0, "Transfer amount must be greater than 0");
+        require(balances[msg.sender] >= amount, "Insufficient balance");
+
+        // Update balances
+        balances[msg.sender] = safeSub(balances[msg.sender], amount);
+        balances[recipient] = safeAdd(balances[recipient], amount);
+
+        // Emit Transfer event
+        emit Transfer(msg.sender, recipient, amount);
+    }
+
+    // Transfer from function
+    function transferFrom(address sender, address recipient, uint256 amount) public {
+        // Ensure sufficient data length from msg.data
+        require((4 + (msg.data.length - 4) - 4) >= 96, "Invalid data length");
+
+        // Ensure the transfer is valid
+        require(amount > 0, "Transfer amount must be greater than 0");
+        require(balances[sender] >= amount, "Insufficient balance");
+        require(allowances[sender][msg.sender] >= amount, "Allowance exceeded");
+
+        // Update balances
+        balances[sender] = safeSub(balances[sender], amount);
+        balances[recipient] = safeAdd(balances[recipient], amount);
+        allowances[sender][msg.sender] = safeSub(allowances[sender][msg.sender], amount);
+
+        // Emit Transfer event
+        emit Transfer(sender, recipient, amount);
+    }
+
+    // Function to approve allowance
+    function approve(address spender, uint256 amount) public {
+        require(spender != address(0), "Approve to the zero address");
+        require(amount > 0, "Approve amount must be greater than 0");
+        
+        allowances[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+    }
+
+    // Function to check balance
+    function balanceOf(address account) public view returns (uint256) {
+        return balances[account];
+    }
+}
+```

@@ -1,0 +1,37 @@
+Based on the additional information provided about the usage of various state variables in specific functions, I will update the comments indicating their contract attributes accordingly. Here's the revised code with the attributes:
+
+```solidity
+mapping (uint256 => uint256) owner_2; // STORAGE[0x2] // Contract Attribute: others
+mapping (uint256 => mapping (uint256 => uint256)) _allowance; // STORAGE[0x4] // Contract Attribute: fees
+mapping (uint256 => uint256) owner_5; // STORAGE[0x5] // Contract Attribute: flag (used for fees exemption)
+uint256 stor_6; // STORAGE[0x6] // Contract Attribute: limit (implies a condition related to limits)
+uint256 stor_7; // STORAGE[0x7] // Contract Attribute: others
+uint256 stor_8; // STORAGE[0x8] // Contract Attribute: others
+uint256 stor_9; // STORAGE[0x9] // Contract Attribute: others
+uint256 stor_a; // STORAGE[0xa] // Contract Attribute: others
+uint256 stor_b; // STORAGE[0xb] // Contract Attribute: others
+uint256 stor_c; // STORAGE[0xc] // Contract Attribute: others
+uint256 stor_d; // STORAGE[0xd] // Contract Attribute: others
+uint256 stor_e; // STORAGE[0xe] // Contract Attribute: others
+uint256 stor_f; // STORAGE[0xf] // Contract Attribute: others
+mapping (uint256 => uint256) _bots; // STORAGE[0x10] // Contract Attribute: flag (related to bot tracking)
+mapping (uint256 => uint256) __buyMap; // STORAGE[0x11] // Contract Attribute: others
+uint256 __maxTxAmount; // STORAGE[0x16] // Contract Attribute: limit (transaction amount limit)
+uint256 __maxWalletSize; // STORAGE[0x17] // Contract Attribute: limit (wallet size limit)
+uint256 __swapTokensAtAmount; // STORAGE[0x18] // Contract Attribute: limit (minimum swap token threshold)
+uint256 _owner; // STORAGE[0x0] bytes 0 to 19 // Contract Attribute: address (contract owner)
+uint256 _manualswap; // STORAGE[0x12] bytes 0 to 19 // Contract Attribute: flag (manual swapping enabled)
+uint256 owner_13_0_19; // STORAGE[0x13] bytes 0 to 19 // Contract Attribute: address (another owner-related address)
+uint256 _uniswapV2Router; // STORAGE[0x14] bytes 0 to 19 // Contract Attribute: router (address of router contract)
+uint256 _uniswapV2Pair; // STORAGE[0x15] bytes 0 to 19 // Contract Attribute: router (Liquidity pair address)
+uint256 stor_15_20_20; // STORAGE[0x15] bytes 20 to 20 // Contract Attribute: others
+uint256 stor_15_21_21; // STORAGE[0x15] bytes 21 to 21 // Contract Attribute: others
+uint256 stor_15_22_22; // STORAGE[0x15] bytes 22 to 22 // Contract Attribute: others
+```
+
+### Key Changes:
+- `owner_5` is now marked as `flag`, as it is read in a context related to fees exemption.
+- `stor_6` has been categorized as `limit`, since it is involved in checking amounts against limits in the function.
+- `_allowance` is marked as `fees` since it can represent transaction costs related to allowances set for accounts.
+
+These changes were made considering the new insights on how these state variables are used in functions, which provide more context for determining their attributes.

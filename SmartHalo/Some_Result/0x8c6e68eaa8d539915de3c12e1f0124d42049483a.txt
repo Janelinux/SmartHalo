@@ -1,0 +1,20 @@
+```solidity
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.0;
+
+contract Token {
+    mapping (address => uint256) private _balances;
+    mapping (address => mapping(address => uint256)) private _allowances;
+    uint256 private _totalSupply;
+    string private _name;
+    string private _symbol;
+    uint256 private _maxTransactionAmount;
+    uint256 private _swapTokensAtAmount;
+    uint256 private _maxWallet;
+    mapping (address => uint256) private _ownerLastTransactionBlock;
+    uint256 private _buyTotalFees;
+    uint256 private _buyCharityFee;
+    uint256 private _buyMarketingFee;
+}
+```

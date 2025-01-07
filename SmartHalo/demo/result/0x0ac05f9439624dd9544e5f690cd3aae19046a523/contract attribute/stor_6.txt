@@ -1,0 +1,61 @@
+Given the additional notes regarding the functionality of the various state variables in the contract, I'll amend the annotations for the state variables to reflect their specific use cases based on how they are accessed or modified in the provided functions.
+
+Here’s the updated annotated code including your notes:
+
+```solidity
+mapping (uint256 => uint256) owner_2; // STORAGE[0x2] // Contract Attribute: limits
+mapping (uint256 => mapping (uint256 => uint256)) _allowance; // STORAGE[0x4] // Contract Attribute: others
+mapping (uint256 => uint256) owner_5; // STORAGE[0x5] // Contract Attribute: fees
+uint256 stor_6; // STORAGE[0x6] // Contract Attribute: limit
+uint256 stor_7; // STORAGE[0x7] // Contract Attribute: others
+uint256 stor_8; // STORAGE[0x8] // Contract Attribute: others
+uint256 stor_9; // STORAGE[0x9] // Contract Attribute: others
+uint256 stor_a; // STORAGE[0xa] // Contract Attribute: others
+uint256 stor_b; // STORAGE[0xb] // Contract Attribute: others
+uint256 stor_c; // STORAGE[0xc] // Contract Attribute: others
+uint256 stor_d; // STORAGE[0xd] // Contract Attribute: others
+uint256 stor_e; // STORAGE[0xe] // Contract Attribute: others
+uint256 stor_f; // STORAGE[0xf] // Contract Attribute: others
+mapping (uint256 => uint256) _bots; // STORAGE[0x10] // Contract Attribute: flag
+mapping (uint256 => uint256) __buyMap; // STORAGE[0x11] // Contract Attribute: others
+uint256 __maxTxAmount; // STORAGE[0x16] // Contract Attribute: limit
+uint256 __maxWalletSize; // STORAGE[0x17] // Contract Attribute: limit
+uint256 __swapTokensAtAmount; // STORAGE[0x18] // Contract Attribute: others
+uint256 _owner; // STORAGE[0x0] bytes 0 to 19 // Contract Attribute: address
+uint256 _manualswap; // STORAGE[0x12] bytes 0 to 19 // Contract Attribute: others
+uint256 owner_13_0_19; // STORAGE[0x13] bytes 0 to 19 // Contract Attribute: others
+uint256 _uniswapV2Router; // STORAGE[0x14] bytes 0 to 19 // Contract Attribute: router
+uint256 _uniswapV2Pair; // STORAGE[0x15] bytes 0 to 19 // Contract Attribute: others
+uint256 stor_15_20_20; // STORAGE[0x15] bytes 20 to 20 // Contract Attribute: others
+uint256 stor_15_21_21; // STORAGE[0x15] bytes 21 to 21 // Contract Attribute: others
+uint256 stor_15_22_22; // STORAGE[0x15] bytes 22 to 22 // Contract Attribute: others
+
+// Events
+OwnershipTransferred(address, address);
+Approval(address, address, uint256);
+Transfer(address, address, uint256);
+function 0x7fe(address varg0) private { 
+    require(owner_2[varg0] <= stor_6, Error('Amount must be less than total reflections')); // Check limit
+    v0, v1 = 0x161d();
+    v2 = _SafeDiv(v0, v1);
+    v3 = _SafeDiv(v2, owner_2[varg0]); // Read limits
+    return v3;
+}
+function 0x161d() private { 
+    v0 = _SafeDiv(0xde0b6b3a7640000, stor_6); // Use limit
+    if (stor_6 >= v0) {
+        return 0xde0b6b3a7640000, stor_6; // Use limit
+    } else {
+        return 0xde0b6b3a7640000, stor_6; // Use limit
+    }
+}
+```
+
+### Updates Made:
+1. **owner_5** has been marked as **fees** to indicate its usage based on the notes that it’s accessed in functions related to fees.
+2. **stor_8, stor_9, stor_a, stor_b** remain classified as **others** as their specific usages are not detailed in the notes.
+3. **stor_6** is indicated as a **limit**, as it’s frequently used as a threshold in various checks.
+4. **__maxTxAmount** and **__maxWalletSize** are re-validated as limits, indicating they refer to transaction and wallet limits, respectively.
+5. The other state variables reflect their previous annotations unless otherwise specified in the notes.
+
+The annotations now provide a clearer mapping of how each state variable is categorized relative to their functionality in the contract.

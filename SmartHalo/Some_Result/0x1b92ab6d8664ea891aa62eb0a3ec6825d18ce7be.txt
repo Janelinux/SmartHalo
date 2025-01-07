@@ -1,0 +1,114 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract TokenVesting {
+    // Storage mappings to track released and revoked tokens
+    mapping(uint256 => uint256) private _released; // STORAGE[0x2] //The name of the corresponding state variable before the modification:_released
+    mapping(uint256 => uint256) private _revoked; // STORAGE[0x3] //The name of the corresponding state variable before the modification:_revoked
+
+    // Array to hold identifiers
+    uint256[] private _identifier; // STORAGE[0x4] //The name of the corresponding state variable before the modification:_identifier
+
+    // Owner and beneficiary addresses
+    address private _owner; // STORAGE[0x0] //The name of the corresponding state variable before the modification:_owner
+    address private _beneficiary; // STORAGE[0x1] //The name of the corresponding state variable before the modification:_beneficiary
+
+    // Events to notify about state changes
+    event TokensReleased(address indexed beneficiary, uint256 amount);
+    event BeneficiaryChanged(address indexed newBeneficiary);
+    event TokensReleasedToAccount(address indexed beneficiary, address indexed to, uint256 amount);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event VestingRevoked(address indexed token);
+
+    // Function to release tokens to a specified address
+    function release(address tokenAddress) public payable { 
+        require(msg.data.length >= 36, "Insufficient data length"); // Check sufficient data length including function selector
+        
+        uint256 availableTokens = retrieveAvailableTokens(tokenAddress); // Get available tokens using a dedicated function
+        require(availableTokens > 0, "TokenVesting::release: no tokens are due"); // Check if tokens are due
+
+        uint256 newReleasedAmount = safeAdd(availableTokens, _released[tokenAddress]); // Ensure safe addition
+        _released[tokenAddress] = newReleasedAmount; // Update released amount
+
+        performTokenTransfer(availableTokens, _beneficiary, tokenAddress); // Transfer tokens
+
+        emit TokensReleased(tokenAddress, availableTokens); // Emit event for tokens released
+    }
+
+    // Function to perform token transfer
+    function performTokenTransfer(uint256 amount, address toAddress, address tokenAddress) private { 
+        require(isContract(tokenAddress), "Address: call to non-contract"); // Ensure token address is valid
+
+        // Add the transfer logic and handle it securely
+        (bool success, bytes memory returnData) = tokenAddress.call(abi.encodeWithSignature("transfer(address,uint256)", toAddress, amount));
+        
+        if (!success) {
+            revert("SafeERC20: low-level call failed"); // Ensure the call succeeded
+        }
+        // Optionally check for return data if needed based on token contract implementation
+    }
+
+    // Function to release tokens to an address
+    function releaseToAddress(address tokenAddress, address recipient, uint256 amount) public payable { 
+        require(msg.data.length >= 100, "Insufficient data length"); // Check sufficient data length including function selector
+        require(msg.sender == _beneficiary, "TokenVesting::setBeneficiary: Not contract beneficiary");
+        require(amount > 0, "TokenVesting::_releaseToAddress: amount should be greater than 0");
+        require(recipient != address(0), "TokenVesting::_releaseToAddress: receiver is the zero address");
+
+        uint256 availableTokens = retrieveAvailableTokens(tokenAddress); // Get available tokens using a dedicated function
+        require(availableTokens > 0, "TokenVesting::_releaseToAddress: no tokens are due");
+        require(availableTokens >= amount, "TokenVesting::_releaseToAddress: not enough tokens vested yet");
+
+        uint256 newReleasedAmount = safeAdd(amount, _released[tokenAddress]); // Ensure safe addition
+        _released[tokenAddress] = newReleasedAmount; // Update released amount
+
+        performTokenTransfer(amount, recipient, tokenAddress); // Transfer tokens
+
+        emit TokensReleasedToAccount(tokenAddress, recipient, amount); // Emit event for tokens released to specified account
+    }
+
+    // Function to revoke tokens
+    function revoke(address tokenAddress) public payable { 
+        require(msg.data.length >= 36, "Insufficient data length"); // Check sufficient data length including function selector
+        require(_owner == msg.sender, "Ownable: caller is not the owner");
+        require((_revoked[tokenAddress] & 0xff) == 0, "TokenVesting::revoke: token already revoked");
+        require(isContract(tokenAddress), "Invalid token address");
+
+        (bool success, bytes memory returnData) = tokenAddress.call(abi.encodeWithSignature("balanceOf(address)", address(this))); // Retrieve token balance
+        require(success, "Failed to retrieve token balance"); // Confirm retrieval was successful
+
+        uint256 tokenBalance;
+        assembly {
+            tokenBalance := mload(add(returnData, 32))
+        }
+
+        uint256 availableTokens = retrieveAvailableTokens(tokenAddress); // Safely get available tokens
+        require(availableTokens <= tokenBalance, "SafeMath: subtraction overflow");
+        
+        // Mark the token as revoked
+        _revoked[tokenAddress] = (_revoked[tokenAddress] & ~0xff) | 0x1; 
+
+        performTokenTransfer(tokenBalance - availableTokens, _owner, tokenAddress); // Transfer remaining tokens
+
+        emit VestingRevoked(tokenAddress); // Emit event for vesting revoked
+    }
+
+    // Helper function to check if an address is a contract
+    function isContract(address addr) private view returns (bool) {
+        return addr.code.length > 0; // Check if the address has bytecode
+    }
+
+    // Helper function to get available tokens
+    function retrieveAvailableTokens(address tokenAddress) private view returns (uint256) {
+        // Implement the logic to determine the amount of tokens available for release
+        return 0; // Placeholder return value
+    }
+
+    // Safe addition to prevent overflow
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+        return c;
+    }
+}
+```

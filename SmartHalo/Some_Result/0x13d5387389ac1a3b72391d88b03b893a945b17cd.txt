@@ -1,0 +1,153 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    // State Variables
+    uint256 public feesPercentage; // The name of the corresponding state variable before the modification:_feesPercentage
+    uint256 public epoch1Start; // The name of the corresponding state variable before the modification:_epoch1Start
+    uint256 public epochDuration; // The name of the corresponding state variable before the modification:_epochDuration
+    uint256 public currentEpoch; // The name of the corresponding state variable before the modification:_epoch
+    uint256 public epochSeniorLiquidity; // The name of the corresponding state variable before the modification:_epochSeniorLiquidity
+    uint256 public epochJuniorLiquidity; // The name of the corresponding state variable before the modification:_epochJuniorLiquidity
+    uint256 public epochUpsideExposureRate; // The name of the corresponding state variable before the modification:_epochUpsideExposureRate
+    uint256 public epochDownsideProtectionRate; // The name of the corresponding state variable before the modification:_epochDownsideProtectionRate
+    uint256 public epochEntryPrice; // The name of the corresponding state variable before the modification:_epochEntryPrice
+    uint256 public queuedJuniorsUnderlyingIn; // The name of the corresponding state variable before the modification:_queuedJuniorsUnderlyingIn
+    uint256 public queuedJuniorsUnderlyingOut; // The name of the corresponding state variable before the modification:_queuedJuniorsUnderlyingOut
+    uint256 public queuedJuniorTokensBurn; // The name of the corresponding state variable before the modification:_queuedJuniorTokensBurn
+    uint256 public queuedSeniorsUnderlyingIn; // The name of the corresponding state variable before the modification:_queuedSeniorsUnderlyingIn
+    uint256 public queuedSeniorsUnderlyingOut; // The name of the corresponding state variable before the modification:_queuedSeniorsUnderlyingOut
+    uint256 public queuedSeniorTokensBurn; // The name of the corresponding state variable before the modification:_queuedSeniorTokensBurn
+    mapping (uint256 => uint256) public historyEpochJuniorTokenPrice; // The name of the corresponding state variable before the modification:_history_epochJuniorTokenPrice
+    mapping (uint256 => uint256) public historyEpochSeniorTokenPrice; // The name of the corresponding state variable before the modification:_history_epochSeniorTokenPrice
+    address public dao; // The name of the corresponding state variable before the modification:_dao
+    mapping (address => JuniorExitInfo) public juniorExitQueue; // The name of the corresponding state variable before the modification:_juniorExitQueue
+    mapping (address => SeniorExitInfo) public seniorExitQueue; // The name of the corresponding state variable before the modification:_seniorExitQueue
+    bool public initialized; // The name of the corresponding state variable before the modification:_initialized
+    address public guardian; // The name of the corresponding state variable before the modification:_guardian
+    address public priceOracle; // The name of the corresponding state variable before the modification:_priceOracle
+    address public seniorRateModel; // The name of the corresponding state variable before the modification:_seniorRateModel
+    address public accountingModel; // The name of the corresponding state variable before the modification:_accountingModel
+    address public feesOwner; // The name of the corresponding state variable before the modification:_feesOwner
+    address public poolToken; // The name of the corresponding state variable before the modification:_poolToken
+    address public juniorToken; // The name of the corresponding state variable before the modification:_juniorToken
+    address public seniorToken; // The name of the corresponding state variable before the modification:_seniorToken
+    bool public paused; // The name of the corresponding state variable before the modification:_paused
+
+    // Structs for Exit Queue Information
+    struct JuniorExitInfo {
+        uint256 epoch; // The epoch associated with junior exit
+        uint256 amount; // The amount of redeem
+    }
+
+    struct SeniorExitInfo {
+        uint256 epoch; // The epoch associated with senior exit
+        uint256 amount; // The amount of redeem
+    }
+
+    // Events
+    event SeniorRedeemTokens(address indexed sender, uint256 indexed epoch, uint256 amount);
+    event TransferGuardian(address indexed previousGuardian, address indexed newGuardian);
+    event ResumeSystem();
+    event JuniorRedeemTokens(address indexed sender, uint256 indexed epoch, uint256 amount);
+    event JuniorRedeemUnderlying(address indexed sender, uint256 indexed epoch, uint256 amount);
+    event JuniorJoinExitQueue(address indexed sender, uint256 indexed epoch, uint256 amountIn, uint256 amountOut);
+    event EpochEnd(uint256 indexed epoch, uint256 seniorAmount, uint256 juniorAmount);
+    event SeniorJoinEntryQueue(address indexed sender, uint256 indexed epoch, uint256 amount, uint256 total);
+    event SetPriceOracle(address indexed previousOracle, address indexed newOracle);
+    event SetFeesOwner(address indexed previousOwner, address indexed newOwner);
+    event TransferDAO(address indexed previousDAO, address indexed newDAO);
+    event JuniorJoinEntryQueue(address indexed sender, uint256 indexed epoch, uint256 amountIn, uint256 total);
+    event SetSeniorRateModel(address indexed previousModel, address indexed newModel);
+    event FeesTransfer(address indexed from, address indexed to, uint256 amount);
+    event SetAccountingModel(address indexed previousModel, address indexed newModel);
+    event SetFeesPercentage(uint256 previousPercentage, uint256 newPercentage);
+    event PauseSystem();
+    event SeniorJoinExitQueue(address indexed sender, uint256 indexed epoch, uint256 amountIn, uint256 total);
+
+    // Functions
+    function getCurrentPrice() private view returns (uint256) {
+        // Ensure price oracle is correctly set and accessible
+        require(priceOracle != address(0), "Price Oracle not set");
+
+        (bool success, bytes memory result) = priceOracle.call(abi.encodeWithSignature("getPrice()"));
+        require(success, "Failed to get price");
+        
+        return abi.decode(result, (uint256));
+    }
+
+    function redeemSeniorUnderlying() public payable {
+        processSeniorRedemption();
+    }
+
+    function processSeniorRedemption() private {
+        require(seniorExitQueue[msg.sender].epoch < currentEpoch, "Not redeemable yet");
+        require(seniorExitQueue[msg.sender].amount > 0, "Nothing to redeem");
+        
+        uint256 redeemableTokens = _SafeMul(seniorExitQueue[msg.sender].amount, historyEpochSeniorTokenPrice[seniorExitQueue[msg.sender].epoch]);
+        require(redeemableTokens > 0, "Invalid token amount");
+
+        queuedSeniorsUnderlyingOut = _SafeSub(queuedSeniorsUnderlyingOut, redeemableTokens);
+        seniorExitQueue[msg.sender].amount = 0;
+
+        // Logic for transferring redeemable tokens, emitting events, etc.
+        // emit SeniorRedeemTokens(msg.sender, seniorExitQueue[msg.sender].epoch, redeemableTokens);
+    }
+
+    function redeemSeniorTokens() public payable {
+        // Implementation for redeeming senior tokens
+    }
+
+    function redeemJuniorTokens() public payable {
+        // Implementation for redeeming junior tokens
+    }
+
+    function depositSenior(uint256 amount) public payable {
+        require(amount > 0, "Amount must be greater than 0");
+        require(poolToken != address(0), "Pool token not set");
+
+        (bool success, bytes memory result) = poolToken.call(abi.encodeWithSignature("allowance(address,address)", msg.sender, address(this)));
+        require(success, "Failed to check allowance");
+
+        (uint256 allowance) = abi.decode(result, (uint256));
+        require(allowance >= amount, "Not enough allowance");
+
+        // Business logic for handling senior deposits
+        // Update queue and emit events accordingly
+    }
+
+    function _SafeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        require(!(a == 0 || b == 0), "Multiplication by zero");
+        require(b <= (~uint256(0) / a), "Overflow on multiplication");
+        return a * b;
+    }
+
+    function _SafeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a >= b, "Underflow on subtraction");
+        return a - b;
+    }
+
+    function _SafeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b <= (~uint256(0) - a), "Overflow on addition");
+        return a + b;
+    }
+
+    // Additional Functions and Logical Constructions
+    function advanceEpoch() public payable {
+        // Logic to advance the epoch goes here
+    }
+
+    function exitJunior(uint256 amount) public payable {
+        require(msg.data.length >= 36, "Data length insufficient");
+        
+        (bool success, bytes memory result) = juniorToken.call(abi.encodeWithSignature("balanceOf(address)", msg.sender));
+        require(success, "Failed to get balance");
+
+        uint256 balance = abi.decode(result, (uint256));
+        require(balance >= amount, "Not enough balance");
+
+        queuedJuniorTokensBurn = _SafeAdd(queuedJuniorTokensBurn, amount);
+        // Additional logic for handling junior exits...
+    }
+}
+```

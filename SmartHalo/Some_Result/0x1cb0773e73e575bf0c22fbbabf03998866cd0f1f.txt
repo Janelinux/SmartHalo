@@ -1,0 +1,95 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+contract OptimizedContract {
+    // Mappings to track balances and allowances
+    mapping(address => uint256) private balances; // The name of the corresponding state variable before the modification: owner_2
+    mapping(address => mapping(address => uint256)) private allowances; // The name of the corresponding state variable before the modification: _allowance
+
+    // Various state variables representing configuration settings
+    uint256 private totalSupply; // The name of the corresponding state variable before the modification: stor_6
+    uint256 private reflectionBal; // The name of the corresponding state variable before the modification: stor_7
+    uint256 private maxTransactionAmount; // The name of the corresponding state variable before the modification: __maxTxAmount
+    uint256 private maxWalletSize; // The name of the corresponding state variable before the modification: __maxWalletSize
+    uint256 private swapTokensAtAmount; // The name of the corresponding state variable before the modification: __swapTokensAtAmount
+    address private owner; // The name of the corresponding state variable before the modification: _owner
+    address private uniswapV2Router; // The name of the corresponding state variable before the modification: _uniswapV2Router
+    address private uniswapV2Pair; // The name of the corresponding state variable before the modification: _uniswapV2Pair
+    uint8 private tradingEnabled; // The name of the corresponding state variable before the modification: stor_15_20_20
+    mapping(address => bool) private blacklisted; // The name of the corresponding state variable before the modification: _bots
+
+    // Events for logging purposes
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Internal function for safe multiplication
+    function safeMul(uint256 x, uint256 y) private pure returns (uint256) {
+        require(y == 0 || (x * y) / y == x, "SafeMath: multiplication overflow");
+        return x * y;
+    }
+
+    // Internal function for safe division
+    function safeDiv(uint256 x, uint256 y) private pure returns (uint256) {
+        require(y > 0, "SafeMath: division by zero");
+        return x / y;
+    }
+
+    // Internal function for safe subtraction
+    function safeSub(uint256 x, uint256 y) private pure returns (uint256) {
+        require(y <= x, "SafeMath: subtraction overflow");
+        return x - y;
+    }
+
+    // Internal function to handle transfers
+    function handleTransfer(uint256 amount, address recipient, address sender) private {
+        require(amount > 0, "Transfer amount must be greater than zero");
+        require(!blacklisted[sender], "Sender is blacklisted");
+        require(!blacklisted[recipient], "Recipient is blacklisted");
+        
+        balances[sender] = safeSub(balances[sender], amount);
+        balances[recipient] = safeAdd(balances[recipient], amount);
+        
+        emit Transfer(sender, recipient, amount);
+    }
+
+    // Function to transfer tokens
+    function transfer(address recipient, uint256 amount) public {
+        require(msg.data.length >= 68, "Invalid data length"); // Check data length for safety
+        require(balances[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
+        handleTransfer(amount, recipient, msg.sender);
+    }
+
+    // Function for safe external call to transfer tokens
+    function transferExternal(address recipient, uint256 amount) private {
+        (bool success, ) = address(this).call(abi.encodeWithSignature("transfer(uint256,address)", amount, recipient));
+        require(success, "Transfer failed");
+    }
+
+    // Function to transfer tokens from one address to another
+    function transferFrom(address sender, address recipient, uint256 amount) public {
+        require(msg.data.length >= 96, "Invalid data length"); // Check data length for safety
+        require(balances[sender] >= amount, "ERC20: transfer amount exceeds balance");
+        require(allowances[sender][msg.sender] >= amount, "ERC20: transfer amount exceeds allowance");
+
+        allowances[sender][msg.sender] = safeSub(allowances[sender][msg.sender], amount);
+        handleTransfer(amount, recipient, sender);
+    }
+
+    // Internal function for adding allowances
+    function approve(address spender, uint256 amount) public returns (bool) {
+        allowances[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+    
+    // Safe addition function
+    function safeAdd(uint256 x, uint256 y) private pure returns (uint256) {
+        require((y + x) >= x, "SafeMath: addition overflow");
+        return x + y;
+    }
+    
+    // Other internal functions can be optimized similarly...
+}
+```

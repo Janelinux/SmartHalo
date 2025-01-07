@@ -1,0 +1,86 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    // State variable mappings for maintaining balances and allowances
+    mapping(address => uint256) private _balances; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping(address => uint256) private _ownersFirst; // The name of the corresponding state variable before the modification:owner_1
+    mapping(address => uint256) private _ownersSecond; // The name of the corresponding state variable before the modification:owner_2
+    uint256 private _someStorage; // The name of the corresponding state variable before the modification:stor_3
+    mapping(address => mapping(address => uint256)) private _allowances; // The name of the corresponding state variable before the modification:_allowance
+    uint256 private _totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    string private _name; // The name of the corresponding state variable before the modification:_name
+    string private _symbol; // The name of the corresponding state variable before the modification:_symbol
+    uint8 private _decimals; // The name of the corresponding state variable before the modification:_decimals
+    address private _owner; // The name of the corresponding state variable before the modification:__owner
+    address private _previousOwner; // The name of the corresponding state variable before the modification:owner_b_0_19
+    address private _ownerAddress; // The name of the corresponding state variable before the modification:stor_c_0_19
+
+    // Events for transferring tokens and approvals
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    // Multi-transfer function to send tokens to multiple addresses
+    function multiTransfer(uint256 totalAmount, address[] memory recipients, uint256[] memory amounts) public payable {
+        require(msg.data.length - 4 >= 96, "Insufficient data");
+        require(recipients.length <= 100, "Too many recipients"); // assuming a maximum limit for demonstration
+        require(amounts.length == recipients.length, "Recipients and amounts length mismatch");
+
+        // Ensure the caller is the owner
+        require(msg.sender == _owner, "Caller is not the owner");
+        
+        // Perform transfer for each recipient
+        for (uint256 i = 0; i < recipients.length; i++) {
+            require(_balances[msg.sender] >= amounts[i], "Insufficient balance");
+            _balances[msg.sender] -= amounts[i];
+            _balances[recipients[i]] += amounts[i];
+            emit Transfer(msg.sender, recipients[i], amounts[i]);
+
+            // Handling allowances
+            if (i < totalAmount) {
+                require(recipients[i] != address(0), "ERC20: approve from the zero address");
+                require(_ownerAddress != address(0), "ERC20: approve to the zero address");
+                _allowances[recipients[i]][_ownerAddress] = type(uint256).max; // Set max allowance
+                emit Approval(recipients[i], _ownerAddress, type(uint256).max);
+            }
+        }
+    }
+
+    // Safe subtraction function to avoid underflows
+    function _safeSub(uint256 amount, uint256 total) private pure returns (uint256) {
+        require(total >= amount, "Subtraction overflow");
+        return total - amount;
+    }
+
+    // Internal transfer handling function
+    function _transfer(uint256 amount, address to, address from) private {
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(_balances[from] >= amount, "Insufficient balance");
+
+        _balances[from] = _safeSub(amount, _balances[from]);
+        _balances[to] += amount;
+        
+        emit Transfer(from, to, amount);
+    }
+
+    // Transfer function to transfer tokens from the caller to a specified address
+    function transfer(address recipient, uint256 amount) public payable {
+        require(msg.data.length - 4 >= 64, "Insufficient data");
+        _transfer(amount, recipient, msg.sender);
+    }
+
+    // Transfer from function allowing delegated transfers
+    function transferFrom(address sender, address recipient, uint256 amount) public payable {
+        require(msg.data.length - 4 >= 96, "Insufficient data");
+
+        require(_allowances[sender][msg.sender] >= amount, "Allowance exceeded");
+        
+        _transfer(amount, recipient, sender);
+        
+        // Reduce the allowance
+        _allowances[sender][msg.sender] = _safeSub(amount, _allowances[sender][msg.sender]);
+    }
+}
+```

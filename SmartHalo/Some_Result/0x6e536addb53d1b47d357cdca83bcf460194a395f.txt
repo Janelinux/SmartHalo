@@ -1,0 +1,110 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Auction {
+    // Improved state variables with meaningful names
+    uint256 public auctionStatus; // The name of the corresponding state variable before the modification:_isAuctionLive
+    uint256 public minimumUSDC; // The name of the corresponding state variable before the modification:_minUSDCAmount
+    uint256 public minimumCrab; // The name of the corresponding state variable before the modification:_minCrabAmount
+    uint256 public priceTolerance; // The name of the corresponding state variable before the modification:_otcPriceTolerance
+    uint256 public depositsCounter; // The name of the corresponding state variable before the modification:_depositsIndex
+    uint256 public withdrawalsCounter; // The name of the corresponding state variable before the modification:_withdrawsIndex
+
+    // struct definitions for deposits and withdrawals
+    struct DepositStruct { uint256 userAddress; uint256 amount; uint256 timestamp; }
+    struct WithdrawStruct { uint256 userAddress; uint256 amount; uint256 timestamp; }
+    struct UserDepositInfo { /* Struct properties */ }
+    struct UserWithdrawInfo { /* Struct properties */ }
+
+    DepositStruct[] public depositsQueue; // The name of the corresponding state variable before the modification:_depositsQueued
+    WithdrawStruct[] public withdrawalsQueue; // The name of the corresponding state variable before the modification:_withdrawsQueued
+
+    mapping (uint256 => uint256) public userUSDBalance; // The name of the corresponding state variable before the modification:_usdBalance
+    mapping (uint256 => uint256) public userCrabBalance; // The name of the corresponding state variable before the modification:_crabBalance
+    mapping (uint256 => UserDepositInfo) public userDepositIndices; // The name of the corresponding state variable before the modification:_userDepositsIndex
+    mapping (uint256 => UserWithdrawInfo) public userWithdrawIndices; // The name of the corresponding state variable before the modification:_userWithdrawsIndex
+    mapping (uint256 => mapping (uint256 => uint256)) public nonces; // The name of the corresponding state variable before the modification:_nonces
+
+    // Events definition
+    event WithdrawRejected(address indexed user, uint256 amount, uint256 reason);
+    event MinCrabUpdated(uint256 newMinCrab);
+    event NonceConfirmed(address indexed user, uint256 nonce);
+    event DepositsCounterSet(uint256 newCount);
+    event CrabQueued(address indexed user, uint256 amount, uint256 timestamp, uint256 duration);
+    event WithdrawsCounterSet(uint256 newCount);
+    event PriceToleranceUpdated(uint256 oldTolerance, uint256 newTolerance);
+    event BidExecuted(uint256 bidId, address indexed user, uint256 amount, uint256 price, bool success);
+    event AuctionStatusToggled(bool isLive);
+    event CrabDequeued(address indexed user, uint256 amount, uint256 completionTime);
+    event MinUSDCUpdated(uint256 newMinUSDC);
+    event USDCQueued(address indexed user, uint256 amount, uint256 index, uint256 timestamp);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event USDCDeposited(address indexed user, uint256 depositId, uint256 amount, uint256 balanceAfter, uint256 fee);
+    event CrabWithdrawn(address indexed user, uint256 amount, uint256 timestamp, uint256 completionTime);
+
+    address private ownerAddress;
+    address private address1;
+    address private address2;
+    address private address3;
+    ExternalContract private externalContract;
+
+    // Main function - optimized for readability and functionality
+    function performAuctionAction(uint256 inputIndex) public { 
+        // Check the message data length to ensure sufficient data is provided
+        require(msg.data.length >= 36, "Insufficient data length");
+        require(inputIndex <= type(uint64).max, "Input index out of bounds");
+
+        uint256 offset = 4 + inputIndex;
+        require(msg.data.length >= offset + 256, "Data length mismatch");
+
+        // Check if the sender is the owner of the auction (address type)
+        checkOwnership();
+        
+        // Process the TWAP
+        (bool successTWAP, uint256 twapPrice, ) = getTwapData();
+        require(successTWAP && twapPrice > 0, "Invalid TWAP data");
+
+        // Calculate required amounts
+        uint256 adjustedPriceTolerance = safeSubtract(1 ether, priceTolerance);
+        uint256 adjustedAmount = safeMultiply(inputIndex, adjustedPriceTolerance);
+        require(adjustedAmount != 0, "Division by zero error");
+
+        // Handle deposits and withdraws
+        while ( /* continue based on condition */ ) {
+            // [... process deposits logic ...]
+        }
+
+        // Emit events based on respective conditions
+        emit USDCDeposited(address(0), 0, 0, 0, 0); // Example event, replace with actual parameters
+    }
+
+    // Private function checks ownership
+    function checkOwnership() private view { 
+        require(msg.sender == ownerAddress, "Ownable: caller is not the owner"); // Check if caller is owner, address comparison
+    }
+
+    // Safely multiply two numbers
+    function safeMultiply(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(!(a == 0 || (a == (a * b) / b)), "Arithmetic overflow or underflow");
+        return a * b;
+    }
+
+    // Safely subtract two numbers
+    function safeSubtract(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(b <= a, "Arithmetic underflow");
+        return a - b;
+    }
+
+    // Function to fetch TWAP data from external contracts
+    function getTwapData() private view returns (bool success, uint256 price, uint256 duration) {
+        (bool result, uint256 latestPrice, uint256 duration) = externalContract.getTwap(address1, address2, address3, uint32(auctionStatus >> 168), true);
+        require(result, "TWAP fetch error");
+        return (result, latestPrice, duration);
+    }
+}
+
+interface ExternalContract {
+    function getTwap(address _address1, address _address2, address _address3, uint32 _input, bool _flag) external view returns (bool, uint256, uint256);
+}
+```

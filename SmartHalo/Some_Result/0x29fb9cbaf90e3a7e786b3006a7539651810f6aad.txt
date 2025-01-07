@@ -1,0 +1,105 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract FineTunedContract {
+    // Structs for storing data
+    struct SafeMathError {
+        uint8 code; // This corresponds to an error code.
+        string message; // This structure holds an error message.
+    }
+
+    struct ReferralReward {
+        uint256 total; // The total amount of referrals.
+        uint256 received; // The amount received from referrals.
+    }
+
+    // Storage mappings
+    mapping (address => ReferralReward) public ownerReferralRewards; // The name of the corresponding state variable before the modification: owner_2
+    mapping (address => mapping(address => uint256)) public allowance; // The name of the corresponding state variable before the modification: _allowance
+    mapping (address => uint256) public tokenValues; // The name of the corresponding state variable before the modification: map_5
+    mapping (address => uint256) public ownerData; // The name of the corresponding state variable before the modification: owner_6
+
+    uint256 internal totalReflections; // The name of the corresponding state variable before the modification: stor_8
+    uint256 internal maxTransactionAmount; // The name of the corresponding state variable before the modification: stor_12
+    uint256 internal maxWalletSize; // The name of the corresponding state variable before the modification: stor_13
+    address internal owner; // The name of the corresponding state variable before the modification: _owner
+    address internal manualSwapAddress; // The name of the corresponding state variable before the modification: _manualswap
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Function to safely divide two uint256 numbers
+    function _SafeDiv(uint256 dividend, uint256 divisor) private pure returns (uint256) {
+        require(divisor > 0, "SafeMath: division by zero");
+        return dividend / divisor;
+    }
+
+    // Function to safely multiply two uint256 numbers
+    function _SafeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        if (b == 0) {
+            return 0;
+        } 
+        uint256 c = a * b;
+        require(c / b == a, "SafeMath: multiplication overflow");
+        return c;
+    }
+
+    // Function to safely add two uint256 numbers
+    function _SafeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+        return c;
+    }
+
+    // Function to safely subtract two uint256 numbers
+    function _SafeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b <= a, "SafeMath: subtraction overflow");
+        return a - b;
+    }
+
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+
+        // Access owner's referrals and current balance
+        ReferralReward storage ownerReward = ownerReferralRewards[owner];
+        ownerReward.received = _SafeAdd(ownerReward.received, amount);
+
+        // Update the total reflections
+        totalReflections = _SafeAdd(totalReflections, amount);
+
+        emit Transfer(msg.sender, recipient, amount);
+        return true;
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+
+        // Ensure the allowance is available
+        uint256 currentAllowance = allowance[sender][msg.sender]; // Access correct allowance mapping
+        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
+        
+        allowance[sender][msg.sender] = _SafeSub(currentAllowance, amount);
+        transfer(recipient, amount);
+        return true;
+    }
+
+    function approve(address spender, uint256 amount) public returns (bool) {
+        address ownerAddress = msg.sender;
+        allowance[ownerAddress][spender] = amount;
+        
+        emit Approval(ownerAddress, spender, amount);
+        return true;
+    }
+
+    // Function to revert with a specific error message
+    function _revertWithError(string memory errorMessage) private pure {
+        revert(errorMessage); // Check calling context for error
+    }
+}
+```

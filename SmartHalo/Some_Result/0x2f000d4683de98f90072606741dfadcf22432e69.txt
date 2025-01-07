@@ -1,0 +1,42 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract WhitelistContract {
+    mapping (address => bool) private _isAdmin; // STORAGE[0x1]
+    uint256 private _currentPhase; // STORAGE[0x2]
+    mapping (address => bool) private _isWhitelisted; // STORAGE[0x3]
+    uint256 private _parameterStorage5; // STORAGE[0x5]
+    uint256 private _price; // STORAGE[0x7]
+    uint256 private _limit; // STORAGE[0x8]
+    uint256 private _userLimit; // STORAGE[0x9]
+    uint256 private _totalCount; // STORAGE[0xa]
+    mapping (address => uint256) private _userCount; // STORAGE[0xb]
+    address private _owner; // STORAGE[0x0] bytes 0 to 19
+    bool private _isPaused; // STORAGE[0x4] bytes 0 to 0
+    address private _nFT; // STORAGE[0x6] bytes 0 to 19
+
+    // Events
+    event LimitUpdated(address indexed updater, uint256 newLimit);
+    event AdminSet(address indexed admin, bool isAdmin);
+    event UserLimitUpdated(address indexed user, uint256 newUserLimit);
+    event PhaseSet(address indexed setter, uint8 newPhase);
+    event Unpaused(address indexed account);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Paused(address indexed account);
+    event Purchased(address indexed buyer, uint256 amount);
+
+    function batchSetWhitelist(address[] calldata addresses, bool[] calldata isWhitelisted) public { 
+        require(addresses.length == isWhitelisted.length, "Lengths of address and boolean arrays are not equal");
+        require(_isAdmin[msg.sender] || msg.sender == _owner, "Caller does not have Admin/Owner access");
+
+        for (uint256 i = 0; i < addresses.length; i++) {
+            _isWhitelisted[addresses[i]] = isWhitelisted[i];
+        }
+    }
+
+    function calculateOffset(uint256 length) private pure returns (uint256) { 
+        require(length <= 0xffffffffffffffff, "Invalid length");
+        return 32 + (length * 32);
+    }
+}
+```

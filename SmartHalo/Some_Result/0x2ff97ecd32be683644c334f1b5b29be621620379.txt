@@ -1,0 +1,74 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.9;
+
+// Declare the contract
+contract TokenContract {
+    // State Variables
+    mapping(address => uint256) public reflections; // The name of the corresponding state variable before the modification: owner_2
+    mapping(address => mapping(address => uint256)) public allowance; // The name of the corresponding state variable before the modification: _allowance
+    uint256 public totalReflections; // The name of the corresponding state variable before the modification: stor_6
+    uint256 private transferredAmount; // The name of the corresponding state variable before the modification: _transfer
+    uint256 private tempStorage1; // The name of the corresponding state variable before the modification: stor_8
+    uint256 private tempStorage2; // The name of the corresponding state variable before the modification: stor_9
+    uint256 private currentBalance; // The name of the corresponding state variable before the modification: stor_c
+    uint256 private previousBalance; // The name of the corresponding state variable before the modification: stor_d
+    mapping(address => uint256) public botsMapping; // The name of the corresponding state variable before the modification: _bots
+    uint256 public maxTransactionLimit; // The name of the corresponding state variable before the modification: __maxTxAmount
+    uint256 public maxWalletSize; // The name of the corresponding state variable before the modification: __maxWalletSize
+    uint256 public swapTokensAtAmount; // The name of the corresponding state variable before the modification: __swapTokensAtAmount
+    address public owner; // The name of the corresponding state variable before the modification: _owner
+    address public uniswapV2Router; // The name of the corresponding state variable before the modification: _uniswapV2Router
+    address public uniswapV2Pair; // The name of the corresponding state variable before the modification: _uniswapV2Pair
+    
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Private function for secure division
+    function safeDiv(uint256 numerator, uint256 denominator) private pure returns (uint256) {
+        require(denominator > 0, "Division by zero"); // Ensure denominator is not zero
+        return numerator / denominator; // Perform division
+    }
+
+    // Private function for secure addition
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= type(uint256).max - b, "Arithmetic overflow"); // Ensure no overflow occurs
+        return a + b; // Perform addition
+    }
+
+    // Private function for secure subtraction
+    function safeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b <= a, "Arithmetic underflow"); // Ensure no underflow occurs
+        return a - b; // Perform subtraction
+    }
+
+    // Transfer function for moving tokens from one address to another
+    function transferFrom(address sender, address recipient, uint256 amount) public {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+        
+        // Ensure the sender has enough balance
+        require(reflections[sender] >= amount, "Insufficient balance");
+
+        // Checking trading restrictions and processing transfer if valid
+        if (recipient != uniswapV2Pair) {
+            uint256 recipientReflectionBalance = calculateReflectionDiv(totalReflections, reflections[recipient]);
+            require(recipientReflectionBalance + amount < maxWalletSize, "Max wallet size exceeded");
+        }
+        
+        reflections[sender] = safeSub(reflections[sender], amount); // Update sender's balance
+        reflections[recipient] = safeAdd(reflections[recipient], amount); // Update recipient's balance
+
+        emit Transfer(sender, recipient, amount); // Emit transfer event
+    }
+
+    // Private function to add reflections for an address
+    function calculateReflectionDiv(uint256 totalSupply, uint256 amount) private view returns (uint256) {
+        require(totalSupply > 0, "Total supply must be greater than zero");
+        return amount / totalSupply; // Return calculated reflection value
+    }
+}
+```

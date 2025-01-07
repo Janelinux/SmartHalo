@@ -1,0 +1,47 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
+contract MyToken {
+    using SafeMath for uint256;
+
+    // Updated mappings for tracking balances and allowances
+    mapping (address => uint256) private _balanceOf; // STORAGE[0x0] // The name of the corresponding state variable before the modification:_balanceOf
+    mapping (address => mapping(address => uint256)) private _allowance; // STORAGE[0x1] // The name of the corresponding state variable before the modification:_allowance
+    uint256 private _totalSupply; // STORAGE[0x2] // The name of the corresponding state variable before the modification:_totalSupply
+    string private _name; // STORAGE[0x3] // The name of the corresponding state variable before the modification:_name
+    string private _symbol; // STORAGE[0x4] // The name of the corresponding state variable before the modification:_symbol
+    uint8 private _decimals; // STORAGE[0x5] // The name of the corresponding state variable before the modification:_decimals
+
+    // Events to track approvals and transfers
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    function transferMany(address[] calldata recipients, uint256[] calldata amounts) external {
+        // Validate input lengths
+        require(msg.data.length >= 68, "Insufficient data length"); // msg.data must contain data for 4 bytes + recipients and amounts
+        require(recipients.length > 0 && amounts.length > 0, "Recipients and amounts must not be empty");
+        require(recipients.length == amounts.length, "Recipients and amounts must have the same length");
+        require(recipients.length <= 100, "Too many recipients"); // Limiting to 100 to prevent gas issues
+
+        for (uint256 i = 0; i < recipients.length; i++) {
+            address recipient = recipients[i]; // 'recipient' variable of type 'address'
+            uint256 transferAmount = amounts[i]; // 'transferAmount' variable of type 'uint256'
+
+            require(msg.sender != address(0), "ERC20: transfer from the zero address"); // Check if sender is not the zero address
+            require(recipient != address(0), "ERC20: transfer to the zero address"); // Check if recipient is not the zero address
+            require(_balanceOf[msg.sender] >= transferAmount, "ERC20: insufficient balance"); // Ensure the sender has enough balance
+
+            // Update balances safely using SafeMath functions
+            uint256 newBalance = _balanceOf[msg.sender].sub(transferAmount); // Safe subtraction
+            _balanceOf[msg.sender] = newBalance; // Update sender's balance after subtraction
+            _balanceOf[recipient] = _balanceOf[recipient].add(transferAmount); // Safe addition
+
+            // Emit Transfer event
+            emit Transfer(msg.sender, recipient, transferAmount); // Log the transfer event
+        }
+    }
+}
+```

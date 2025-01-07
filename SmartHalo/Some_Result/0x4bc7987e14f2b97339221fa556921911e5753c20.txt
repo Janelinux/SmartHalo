@@ -1,0 +1,84 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    uint256 private totalTokensOfOwner; // STORAGE[0x0] // The name of the corresponding state variable before the modification:_tokensOfOwnerIn
+    uint256 private totalSupply; // STORAGE[0x1] // The name of the corresponding state variable before the modification:_totalSupply
+    string[] private tokenNames; // STORAGE[0x2] // The name of the corresponding state variable before the modification:_name
+    string[] private tokenSymbols; // STORAGE[0x3] // The name of the corresponding state variable before the modification:_symbol
+    mapping(uint256 => uint256) private tokenInfoMap; // STORAGE[0x4] // The name of the corresponding state variable before the modification:map_4
+    mapping(uint256 => uint256) private numberMinted; // STORAGE[0x5] // The name of the corresponding state variable before the modification:_numberMinted
+    mapping(uint256 => uint256) private someOtherMap; // STORAGE[0x6] // The name of the corresponding state variable before the modification:map_6
+    mapping(uint256 => mapping(uint256 => uint256)) private approvalForAll; // STORAGE[0x7] // The name of the corresponding state variable before the modification:_isApprovedForAll
+    mapping(uint256 => uint256) private userExpiration; // STORAGE[0x8] // The name of the corresponding state variable before the modification:_userExpires
+    uint256 private withdrawAmount; // STORAGE[0xa] // The name of the corresponding state variable before the modification:_withdraw
+    mapping(uint256 => uint256) private royaltyDetails; // STORAGE[0xc] // The name of the corresponding state variable before the modification:_royaltyInfo
+    address[] private payoutAddresses; // STORAGE[0xf] // The name of the corresponding state variable before the modification:_payoutAddresses
+    mapping(uint256 => uint256) private totalLoanedPerAccount; // STORAGE[0x11] // The name of the corresponding state variable before the modification:_totalLoanedPerAddress
+    mapping(uint256 => uint256) private tokenLoanStatus; // STORAGE[0x12] // The name of the corresponding state variable before the modification:_tokenOwnersOnLoan
+    mapping(uint256 => uint256) private exchangeBlocklistStatus; // STORAGE[0x13] // The name of the corresponding state variable before the modification:_isExchangeBlocklisted
+    string[] private baseTokenURIArray; // STORAGE[0x14] // The name of the corresponding state variable before the modification:_baseTokenURI
+    uint256 private totalLoaned; // STORAGE[0x15] // The name of the corresponding state variable before the modification:_totalLoaned
+    uint256 private publicMintsAllowedPerAccount; // STORAGE[0x16] // The name of the corresponding state variable before the modification:_publicMintsAllowedPerAddress
+    uint256 private publicMintsAllowedPerTransaction; // STORAGE[0x17] // The name of the corresponding state variable before the modification:_publicMintsAllowedPerTransaction
+    uint256 private publicMintingPrice; // STORAGE[0x18] // The name of the corresponding state variable before the modification:_publicPrice
+    uint256[] private payoutBasisPoints; // STORAGE[0x19] // The name of the corresponding state variable before the modification:_payoutBasisPoints
+    uint256 private permanentlyDisabledBlocklist; // STORAGE[0x10] // The name of the corresponding state variable before the modification:_blocklistPermanentlyDisabled
+    uint256 private isPublicSaleActive; // STORAGE[0x10] // The name of the corresponding state variable before the modification:_isPublicSaleActive
+    uint256 private loansPausedStatus; // STORAGE[0x10] // The name of the corresponding state variable before the modification:_loansPaused
+    uint256 private metadataFrozenStatus; // STORAGE[0x10] // The name of the corresponding state variable before the modification:_metadataFrozen
+    uint256 private payoutAddressesFrozenStatus; // STORAGE[0x10] // The name of the corresponding state variable before the modification:_payoutAddressesFrozen
+    address private ownerAddress; // STORAGE[0x9] // The name of the corresponding state variable before the modification:_owner
+    uint256 private stor_b_0_19; // STORAGE[0xb] // The name of the corresponding state variable before the modification:stor_b_0_19
+    address private blocklistContractAddress; // STORAGE[0xd] // The name of the corresponding state variable before the modification:_blocklistContractAddress
+    address private royaltyRecipientAddress; // STORAGE[0xe] // The name of the corresponding state variable before the modification:_royaltyAddress
+    uint256 private royaltyFeeAmount; // STORAGE[0x1a] // The name of the corresponding state variable before the modification:_royaltyFee
+    uint256 private pausedStatus; // STORAGE[0x9] // The name of the corresponding state variable before the modification:_paused
+    uint256 private stor_b_20_31; // STORAGE[0xb] // The name of the corresponding state variable before the modification:stor_b_20_31
+
+    // Events
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+    event LoanRetrieved(address indexed from, address indexed to, uint256 indexed tokenId);
+    event Loan(address indexed from, address indexed to, uint256 indexed tokenId);
+    event UpdateUser(uint256 indexed tokenId, address indexed user, uint64 expires);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+    event Unpaused(address indexed account);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Paused(address indexed account);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+
+    // Function to retrieve explicit ownerships
+    function explicitOwnershipsOf(uint256[] memory tokenIds) public view returns (uint256[] memory) {
+        require(msg.data.length >= 36); // Ensure enough data is provided for execution.
+        require(tokenIds.length <= 0xffffffffffffffff); // Check for valid length.
+        require(4 + tokenIds.length + 32 <= msg.data.length); 
+        require(tokenIds.length <= 0xffffffffffffffff, "Invalid memory allocation"); 
+
+        uint256 arrayLength = tokenIds.length; 
+        uint256[] memory ownershipData = new uint256[](arrayLength); // Replaced variable v2 with ownershipData.
+
+        for (uint256 i = 0; i < arrayLength; i++) { // Use uint256 for index
+            // Access each token ID and accumulate ownership information
+            require(i < tokenIds.length, "Out-of-bounds access detected"); 
+            ownershipData[i] = getOwnershipInfo(tokenIds[i]); // Renamed to getOwnershipInfo.
+        }
+
+        return ownershipData; // Return the collected ownership information.
+    }
+
+    // Helper function to retrieve ownership info
+    function getOwnershipInfo(uint256 tokenId) private view returns (uint256) { 
+        require(tokenId > 0, "Token does not exist"); // Check if the token ID is valid.
+        require(tokenId < totalTokensOfOwner, "Token ID out of range"); // Check if the token is within valid range
+        uint256 info = tokenInfoMap[tokenId];
+        require(!(info & 0x100000000000000000000000000000000000000000000000000000000), "Token not owned");
+
+        while (info != 0) { // Check whether info is still valid
+            tokenId++; // Increment to get the next token's information.
+            info = tokenInfoMap[tokenId]; // Retrieve the next token's information.
+        }
+        return info; // Return the ownership info.
+    }
+}
+```

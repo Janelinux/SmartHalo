@@ -1,0 +1,96 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Token {
+    mapping (address => uint256) private excludeAccounts; // The name of the corresponding state variable before the modification:_excludeAccount
+    mapping (address => uint256) private balances; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping (address => mapping (address => uint256)) private allowances; // The name of the corresponding state variable before the modification:_allowance
+    mapping (address => uint256) private lastTransferTimestamps; // The name of the corresponding state variable before the modification:map_4
+    mapping (address => uint256) private isExcluded; // The name of the corresponding state variable before the modification:_isExcluded
+    address[] private includeAccounts; // The name of the corresponding state variable before the modification:_includeAccount
+    uint256 private tradingEnabledTimestamp; // The name of the corresponding state variable before the modification:stor_9
+    uint256 private totalFees; // The name of the corresponding state variable before the modification:_totalFees
+    string private tokenName; // Private variable representing the token's name
+    string private tokenSymbol; // Private variable representing the token's symbol
+    uint256 private rSupply; // The name of the corresponding state variable before the modification:_rSupply
+    uint256 private tSupply; // The name of the corresponding state variable before the modification:_tSupply
+    address private owner; // The name of the corresponding state variable before the modification:_owner
+    bool private isPaused; // The name of the corresponding state variable before the modification:stor_b_0_0
+    uint8 private decimals; // The name of the corresponding state variable before the modification:_decimals
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Allowable max uint256 for multiplication checks
+    uint256 private constant MAX_UINT256 = type(uint256).max;
+
+    function subtractWithOverflowCheck(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a >= b, "SafeMath: subtraction overflow");
+        return a - b;
+    }
+
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(msg.sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+        
+        address sender = msg.sender;
+
+        // Check if the sender or recipient is excluded
+        bool isSenderExcluded = (isExcluded[sender] == 1);
+        bool isRecipientExcluded = (isExcluded[recipient] == 1);
+
+        // Execute transfer based on exclusion status
+        if (isSenderExcluded && !isRecipientExcluded) {
+            executeTransfer(sender, recipient, amount);
+        } else {
+            handleNonExcludedTransfer(sender, recipient, amount);
+        }
+
+        emit Transfer(sender, recipient, amount);
+        return true;
+    }
+
+    function executeTransfer(address sender, address recipient, uint256 amount) private {
+        balances[sender] = subtractWithOverflowCheck(balances[sender], amount);
+        balances[recipient] += amount;
+    }
+
+    function handleNonExcludedTransfer(address sender, address recipient, uint256 amount) private {
+        balances[sender] = subtractWithOverflowCheck(balances[sender], amount);
+        balances[recipient] += amount;
+
+        // Additional management logic can go here if required
+    }
+
+    function approve(address spender, uint256 amount) public returns (bool) {
+        address ownerAddress = msg.sender;
+        allowances[ownerAddress][spender] = amount;
+        emit Approval(ownerAddress, spender, amount);
+        return true;
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+
+        address spender = msg.sender;
+        uint256 currentAllowance = allowances[sender][spender];
+
+        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
+
+        // Perform the transfer
+        executeTransfer(sender, recipient, amount);
+        allowances[sender][spender] = subtractWithOverflowCheck(currentAllowance, amount);
+
+        emit Transfer(sender, recipient, amount);
+        return true;
+    }
+
+    // Other utility and security functions can go here...
+}
+```

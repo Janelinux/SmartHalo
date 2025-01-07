@@ -1,0 +1,18 @@
+```solidity
+// Decompiled by library.dedaub.com
+// 2022.11.20 20:15 UTC
+// Data structures and variables inferred from the use of storage instructions
+
+pragma solidity ^0.8.0;
+
+// Storage variable to hold the address of the fallback implementation
+uint256 fallbackImplementationAddress; // The name of the corresponding state variable before the modification:_fallback
+
+/**
+ * @dev Function to retrieve the address of the current implementation
+ * @return Returns the address of the fallback implementation
+ */
+function getImplementationAddress() public view returns (uint256) { // The function has been renamed to getImplementationAddress and modified to include a return type
+    return fallbackImplementationAddress; // Return the fallback implementation address
+}
+```

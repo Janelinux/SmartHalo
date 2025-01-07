@@ -1,0 +1,110 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Token {
+    // State variables
+    mapping(address => mapping(address => uint256)) private _allowance; // The name of the corresponding state variable before the modification:_allowance
+    uint256 private _totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    uint256[] private _eligibleTokens; // The name of the corresponding state variable before the modification:array_2
+    uint256[] private _holderTokens; // The name of the corresponding state variable before the modification:array_3
+    mapping(address => uint256) private _balanceOf; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping(address => uint256) private _transferControl; // The name of the corresponding state variable before the modification:_transfer
+    uint256 private _transferFee; // The name of the corresponding state variable before the modification:stor_8
+    uint256 private _burnFee; // The name of the corresponding state variable before the modification:stor_9
+    mapping(address => uint256) private _ownerA; // The name of the corresponding state variable before the modification:owner_a
+    mapping(address => uint256) private _ownerB; // The name of the corresponding state variable before the modification:owner_b
+    address private _renouncedOwnership; // The name of the corresponding state variable before the modification:_renounceOwnership
+    address private _uniswapPair; // The name of the corresponding state variable before the modification:_uniswapV2Pair
+
+    // Events
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Internal Functions
+    function _safeSubtract(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(a >= b, "Arithmetic overflow"); // ensuring no underflow
+        return a - b;
+    }
+
+    function _safeAdd(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(a <= type(uint256).max - b, "Arithmetic overflow"); // ensuring no overflow
+        return a + b;
+    }
+
+    // Private Transfer Function
+    function _transferTokens(uint256 amount, address to, address from) private { 
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(_balanceOf[from] >= amount, "ERC20: transfer amount exceeds balance");
+
+        uint256 transferFee = 0; // Assumed that _transferFee is a percentage
+        // Check if this is a transfer to or from the Uniswap pair
+        if (_uniswapPair != address(0)) {
+            if (to == _uniswapPair) {
+                transferFee = _transferFee; // Fee applied if transferring to the Uniswap pair
+            }
+            if (from == _uniswapPair) {
+                transferFee = _burnFee; // Fee applied if transferring from the Uniswap pair
+            }
+        }
+
+        if (_ownerB[from] > 0) {
+            transferFee = _ownerB[from]; // Override transferFee if ownerB has a fee
+        }
+
+        require(amount > (transferFee * amount) / 100, "Arithmetic overflow"); // To prevent division by zero
+        uint256 feeAmount = (amount * transferFee) / 100; // Calculate Fee
+
+        // Handle burning/fee deduction
+        if (feeAmount > 0) {
+            uint256 newBalance = _safeSubtract(_balanceOf[from], feeAmount);
+            _balanceOf[from] = newBalance;
+            uint256 deadBalance = _safeAdd(_balanceOf[address(0xdead)], feeAmount);
+            _balanceOf[address(0xdead)] = deadBalance;
+            emit Transfer(from, address(0xdead), feeAmount); // Emit burn event
+        }
+
+        // Handle Balance Transfer
+        uint256 transferAmount = _safeSubtract(amount, feeAmount); 
+        _balanceOf[from] = _safeSubtract(_balanceOf[from], transferAmount);
+        _balanceOf[to] = _safeAdd(_balanceOf[to], transferAmount);
+        
+        emit Transfer(from, to, transferAmount); // Emit Transfer event
+    }
+
+    // Public Transfer Function
+    function transfer(address to, uint256 amount) public payable returns (bool) { 
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "ERC20: transfer amount must be greater than zero");
+        require(4 + (msg.data.length - 4) - 4 >= 64, "Invalid data length"); // Validate msg.data length
+
+        if (_transferControl[msg.sender] != 1) {
+            _transferTokens(amount, to, msg.sender); // Call the private transfer function
+        } else {
+            _balanceOf[to] = _safeAdd(_balanceOf[to], amount); // Direct transfer if transfer control is allowed
+        }
+        return true; // Indicate successful transfer
+    }
+
+    // Public TransferFrom Function
+    function transferFrom(address from, address to, uint256 amount) public payable returns (bool) { 
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "ERC20: transfer amount must be greater than zero");
+        require(4 + (msg.data.length - 4) - 4 >= 96, "Insufficient data length"); // Validate msg.data length
+        
+        // Check allowance
+        if (_allowance[from][msg.sender] != type(uint256).max) {
+            require(_allowance[from][msg.sender] >= amount, "ERC20: insufficient allowance");
+            // Deduct allowance
+            _allowance[from][msg.sender] = _safeSubtract(_allowance[from][msg.sender], amount);
+        }
+        
+        // Call the private transfer function
+        _transferTokens(amount, to, from);
+        return true; // Indicate successful transfer
+    }
+}
+```

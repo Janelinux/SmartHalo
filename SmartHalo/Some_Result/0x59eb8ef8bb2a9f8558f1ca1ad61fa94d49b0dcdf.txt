@@ -1,0 +1,64 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    // State variables
+    uint256 public maxSupply; // 0x10 // The name of the corresponding state variable before the modification:_maxSupply
+    uint256 public totalSupply; // 0x1 // The name of the corresponding state variable before the modification:_totalSupply
+    string[] public names; // 0x2 // The name of the corresponding state variable before the modification:_name
+    string[] public symbols; // 0x3 // The name of the corresponding state variable before the modification:_symbol
+    mapping(uint256 => address[]) public walletOfOwner; // 0x4 // The name of the corresponding state variable before the modification:_walletOfOwner
+    mapping(uint256 => uint256) public balanceOf; // 0x5 // The name of the corresponding state variable before the modification:_balanceOf
+    mapping(uint256 => uint256) public approved; // 0x6 // The name of the corresponding state variable before the modification:_approve
+    mapping(uint256 => bool) public isApprovedForAll; // 0x7 // The name of the corresponding state variable before the modification:_isApprovedForAll
+    uint256 public merkleRoot; // 0xa // The name of the corresponding state variable before the modification:_merkleRoot
+    mapping(uint256 => bool) public whitelistClaimed; // 0xb // The name of the corresponding state variable before the modification:_whitelistClaimed
+    string[] public uriPrefix; // 0xc // The name of the corresponding state variable before the modification:_uriPrefix
+    string[] public uriSuffix; // 0xd // The name of the corresponding state variable before the modification:_uriSuffix
+    string public hiddenMetadataUri; // 0xe // The name of the corresponding state variable before the modification:_hiddenMetadataUri
+    uint256 public cost; // 0xf // The name of the corresponding state variable before the modification:_cost
+    uint256 public maxMintAmountPerTx; // 0x11 // The name of the corresponding state variable before the modification:_maxMintAmountPerTx
+    bool public paused; // 0x12 // The name of the corresponding state variable before the modification:_paused
+    bool public whitelistMintEnabled; // 0x12 // The name of the corresponding state variable before the modification:_whitelistMintEnabled
+    bool public revealed; // 0x12 // The name of the corresponding state variable before the modification:_revealed
+    address private owner; // 0x8 // The name of the corresponding state variable before the modification:_owner
+
+    // Events
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Safe division function
+    function _safeDiv(uint256 numerator, uint256 denominator) private pure returns (uint256) { 
+        require(denominator != 0, "Panic: Division by zero");
+        return numerator / denominator;
+    }
+
+    // Check if token is valid
+    function _isValidToken(uint256 tokenId) private view returns (bool) { 
+        if (tokenId > totalSupply) {
+            return false; 
+        }
+        return (walletOfOwner[tokenId].length > 0);
+    }
+
+    // Get token URI function
+    function _getTokenURI(uint256 tokenId) private view returns (string memory) {
+        require(_isValidToken(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        
+        if (revealed) {
+            return string(abi.encodePacked(uriPrefix[0], tokenId, uriSuffix[0])); // Example URI format
+        } else {
+            return hiddenMetadataUri; 
+        }
+    }
+
+    // Token URI function for public access
+    function tokenURI(uint256 tokenId) public view returns (string memory) { 
+        require(msg.data.length >= 36, "Insufficient input data"); // Adjusted: 4 for the function selector + 32 (value)
+        return _getTokenURI(tokenId);
+    }
+}
+```

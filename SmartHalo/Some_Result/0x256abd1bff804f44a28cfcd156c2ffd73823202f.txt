@@ -1,0 +1,57 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    // Mappings to store balances and allowances
+    mapping(address => uint256) private _balanceOf; // STORAGE[0x0]
+    mapping(address => mapping(address => uint256)) private _allowance; // STORAGE[0x1]
+    
+    // Total supply of tokens
+    uint256 private _totalSupply; // STORAGE[0x2]
+    
+    // Token name (as bytes32 for consistent usage)
+    bytes32 private _name; // STORAGE[0x3] 
+    bytes32 private _symbol; // STORAGE[0x4] 
+    
+    // Events for logging
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Function to retrieve the symbol of the token
+    function getSymbol() public view returns (bytes memory) { 
+        uint256 symbolLength = getSymbolLength(uint256(_symbol)); 
+        bytes memory symbolBytes = new bytes(symbolLength);
+        
+        // Assembly to copy the symbol data
+        assembly {
+            // If symbolLength is greater than 32, copy using a loop
+            if gt(symbolLength, 31) {
+                // Copy bytes in 32-byte chunks
+                for { let index := 0 } lt(index, symbolLength) { index := add(index, 32) } {
+                    mstore(add(symbolBytes, add(index, 32)), mload(add(_symbol, index)))
+                }
+            } else {
+                // Otherwise, directly copy for shorter symbols
+                mstore(symbolBytes, shl(8, mload(add(_symbol, 32))))
+            }
+        }
+        
+        return symbolBytes; // Return the symbol bytes
+    }
+
+    // Function to get the length of the symbol (utility function)
+    function getSymbolLength(uint256 varg0) private pure returns (uint256) { 
+        uint256 length = varg0 / 2; // Divide by 2 to get the adjusted length
+        uint256 adjustedFlag = varg0 & 0x1;
+
+        // If the adjustedFlag is set, further tweak the length
+        if (adjustedFlag == 0) {
+            length = length & 0x7F; // Mask out unnecessary bits
+        }
+
+        require(adjustedFlag != length && length < 32, "Length out of bounds"); // Ensure length validity
+        return length; // Return the computed length
+    }
+}
+```

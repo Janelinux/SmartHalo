@@ -1,0 +1,87 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+contract TokenContract {
+    uint256 private totalSupply; // STORAGE[0x2] // The name of the corresponding state variable before the modification:_totalSupply
+    uint256[] private tokenOwners; // STORAGE[0x3] // The name of the corresponding state variable before the modification:array_3
+    uint256[] private mintCounts; // STORAGE[0x4] // The name of the corresponding state variable before the modification:array_4
+    mapping(uint256 => uint256) private tokenOwnerMap; // STORAGE[0x5] // The name of the corresponding state variable before the modification:owner_5
+    mapping(uint256 => uint256) private numberMinted; // STORAGE[0x6] // The name of the corresponding state variable before the modification:_numberMinted
+    mapping(uint256 => uint256) private approvalMap; // STORAGE[0x7] // The name of the corresponding state variable before the modification:map_7
+    mapping(uint256 => mapping(uint256 => uint256)) private isApprovedForAll; // STORAGE[0x8] // The name of the corresponding state variable before the modification:_isApprovedForAll
+    uint256[] private claimedTokens; // STORAGE[0x9] // The name of the corresponding state variable before the modification:array_9
+    mapping(uint256 => uint256) private claimedStatus; // STORAGE[0xb] // The name of the corresponding state variable before the modification:_claimed
+    uint256 private ownerAddress; // STORAGE[0x0] // The name of the corresponding state variable before the modification:_owner
+    uint256 private maxSupply; // STORAGE[0xa] // The name of the corresponding state variable before the modification:_maxSupply
+    uint256 private publicSaleLimit; // STORAGE[0xa] // The name of the corresponding state variable before the modification:_publicLimit
+    uint256 private isPublicSaleActive; // STORAGE[0xa] // The name of the corresponding state variable before the modification:_publicSaleActive
+
+    // Events
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+
+    function calculateHalf(uint256 value) private pure returns (uint256) { 
+        uint256 halfValue = value >> 1;
+        if (value & 0x1 == 0) {
+            halfValue = halfValue & 0x7f;
+        }
+        require((value & 0x1) - (halfValue < 32) == 0, "Panic(34)"); // access to incorrectly encoded storage byte array
+        return halfValue;
+    }
+
+    function safeDivide(uint256 numerator, uint256 denominator) private pure returns (uint256) { 
+        require(denominator > 0, "Panic(18)"); // division by zero
+        return numerator / denominator;
+    }
+
+    function safeIncrement(uint256 value) private pure returns (uint256) { 
+        require(value < type(uint256).max, "Panic(17)"); // arithmetic overflow or underflow
+        return value + 1;
+    }
+
+    function safeAddition(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(a <= type(uint256).max - b, "Panic(17)"); // arithmetic overflow or underflow
+        return a + b;
+    }
+
+    function getTokenData() private view returns (bytes memory) { 
+        uint256 length = calculateHalf(claimedTokens.length);
+        bytes memory data = new bytes(length);
+        if (length == 0) {
+            return data;
+        } else if (length > 31) {
+            for (uint256 i = 0; i < length; i++) {
+                data[i] = bytes1(uint8(claimedTokens[i]));
+            }
+            return data;
+        } else {
+            data[0] = bytes1(uint8(claimedTokens.length >> 8 << 8)); // Fill the first byte as per length
+            return data;
+        }
+    }
+
+    function tokenURI(uint256 tokenId) public view returns (string memory) { 
+        require(msg.data.length >= 36, "Insufficient data length");
+        require(tokenId == tokenId, "Invalid tokenId");
+        
+        require(isTokenExist(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        bytes memory tokenData = getTokenData();
+
+        // Construct the URI based on the obtained token data
+        // This section can be elaborated based on the application requirements
+        
+        return string(tokenData);
+    }
+
+    function isTokenExist(uint256 tokenId) private view returns (bool) { 
+        bool exists = (tokenId >= 1 && tokenId < totalSupply); // Check token range
+        if (exists) {
+            exists = (tokenOwnerMap[tokenId] >> 224) == 0; // Check ownership bit
+        }
+        return exists;
+    }
+}
+```

@@ -1,0 +1,78 @@
+```solidity
+pragma solidity ^0.8.0;
+
+// Basic interface for ERC20 and related events
+interface IERC20 {
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+// ERC20 Token contract
+contract MyToken is IERC20 {
+    // State variables
+    mapping (uint256 => uint256) public balanceOf; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping (address => uint256) public increaseAllowance; // The name of the corresponding state variable before the modification:_increaseAllowance
+    uint256 public totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    address public owner; // The name of the corresponding state variable before the modification:_owner
+
+    // Constructor to set the initial Owner and Total Supply
+    constructor(uint256 initialSupply) {
+        owner = msg.sender;
+        totalSupply = initialSupply;
+        balanceOf[uint256(uint160(msg.sender))] = initialSupply; // Assign entire supply to owner
+    }
+
+    function transfer(address to, uint256 amount) public returns (bool) {
+        require(msg.data.length - 4 >= 64, "Insufficient data length");
+        // Call internal transfer logic
+        _transfer(msg.sender, to, amount);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public returns (bool) {
+        require(msg.data.length - 4 >= 96, "Invalid data length for transferFrom");
+        _transfer(from, to, amount);
+        
+        // Adjust allowance and emit approval event
+        uint256 currentAllowance = increaseAllowance[from];
+        require(currentAllowance >= amount, "Transfer amount exceeds allowance");
+        increaseAllowance[from] = SafeSub(currentAllowance, amount);
+        
+        emit Approval(from, msg.sender, increaseAllowance[from]);
+        return true;
+    }
+
+    // Internal transfer function
+    function _transfer(address from, address to, uint256 amount) internal returns (uint256) {
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(to != address(0), "ERC20: transfer to the zero address");
+        
+        // Ensure sufficient balance
+        uint256 senderBalance = balanceOf[uint256(uint160(from))];
+        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+        
+        balanceOf[uint256(uint160(from))] = SafeSub(senderBalance, amount);
+        balanceOf[uint256(uint160(to))] = SafeAdd(balanceOf[uint256(uint160(to))], amount);
+        
+        emit Transfer(from, to, amount);
+        return amount;
+    }
+
+    // Safe Math Functions
+    function SafeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a + b >= a, "Safe math addition overflow");
+        return a + b;
+    }
+
+    function SafeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a >= b, "Safe math subtraction underflow");
+        return a - b;
+    }
+
+    // Ensure proper function calling with the correct amount of data
+    function someFunction(uint256 param1, uint256 param2, address to) private {
+        require(msg.sender == owner, "Only owner can call this");
+        // Do something with param1 and param2
+    }
+}
+```

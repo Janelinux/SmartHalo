@@ -1,0 +1,121 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
+
+contract ImprovedERC20 {
+    // State variables with improved names
+    uint256[] private tokenNames; // The name of the corresponding state variable before the modification:_name
+    uint256[] private tokenSymbols; // The name of the corresponding state variable before the modification:_symbol
+    mapping (uint256 => uint256) private balances; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping (uint256 => mapping (uint256 => uint256)) private allowances; // The name of the corresponding state variable before the modification:_allowance
+    mapping (uint256 => uint256) private feeExclusion; // The name of the corresponding state variable before the modification:__isExcludefromFee
+    mapping (uint256 => uint256) private marketPairStatus; // The name of the corresponding state variable before the modification:_isMarketPair
+    mapping (uint256 => uint256) private previousStates; // The name of the corresponding state variable before the modification:__previous
+    uint256 private buyMarketingFee; // The name of the corresponding state variable before the modification:__buyMarketingFee
+    uint256 private sellMarketingFee; // The name of the corresponding state variable before the modification:__sellMarketingFee
+    uint256 private totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    uint256 private owner; // The name of the corresponding state variable before the modification:_owner
+    uint256 private decimals; // The name of the corresponding state variable before the modification:_decimals
+    uint256 private output; // The name of the corresponding state variable before the modification:_out
+    uint256 private uniswapPair; // The name of the corresponding state variable before the modification:_uniswapPair
+    uint256 private uniswapV2Router; // The name of the corresponding state variable before the modification:_uniswapV2Router
+    uint256 private isInSwap; // The name of the corresponding state variable before the modification:stor_e_20_20
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Internal function for transferring tokens
+    function executeTransfer(uint256 amount, address from, address to) private returns (bool) {
+        require(to != address(0), "ERC20: transfer from the zero address");
+        require(previousStates[uint256(uint160(to))] != 0, "ERC20: transfer to the zero address");
+        require(from != address(0), "ERC20: transfer to the zero address");
+        
+        uint256 localIsInSwap = isInSwap; // Capture the state
+        if (localIsInSwap == 0) {
+            // Determine if it's a market pair
+            bool isMarketPair = marketPairStatus[uint256(uint160(to))] != 0;
+            if (!isMarketPair) {
+                localIsInSwap = 1; // Flag to indicate the swap is in process
+
+                // Performing swap and updating balances
+                uint256[] memory swapAddresses = new uint256[](2);
+                swapAddresses[0] = uint256(uint160(address(this)));
+                swapAddresses[1] = uniswapPair;
+
+                // Ensure Uniswap router code is valid
+                require(uniswapV2Router != 0, "Invalid router");
+
+                // Execute swap
+                (bool success, bytes memory data) = address(uniswapV2Router).call(abi.encodeWithSignature("swapExactTokensForETHSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)", balances[address(this)], 0, swapAddresses, address(this), block.timestamp));
+                require(success, "Swap failed");
+                
+                // Handling output on success
+                if (address(this).balance > 0) {
+                    (bool outputSuccess,) = address(output).call{value: address(this).balance}("");
+                    require(outputSuccess, "Output call failed");
+                }
+                isInSwap = 0; // Clear swap flag
+            }
+
+            balances[to] -= amount; // Update balance for the sender's account
+            
+            bool excludedFromFee = feeExclusion[uint256(uint160(to))] != 0 || feeExclusion[uint256(uint160(from))] != 0;
+            
+            uint256 feeAmount;
+            if (!excludedFromFee) {
+                uint256 marketingFee = marketPairStatus[uint256(uint160(to))] != 0 ? sellMarketingFee : buyMarketingFee;
+                feeAmount = (amount * marketingFee) / 100; // Calculate fee
+                if (feeAmount > 0) {
+                    balances[address(this)] += feeAmount; // Add fee to contract balance
+                    emit Transfer(from, address(this), feeAmount); // Emit transfer event
+                }
+                amount -= feeAmount; // Subtract fee from amount
+            }
+            balances[from] += amount; // Update receiver's balance
+            emit Transfer(from, to, amount); // Emit transfer event
+            return true;
+        } else {
+            revert("Insufficient balance");
+        }
+    }
+
+    // Internal function for safe addition
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= type(uint256).max - b, "SafeMath: addition overflow");
+        return a + b;
+    }
+
+    // Transfer function called by external users
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        return executeTransfer(amount, msg.sender, recipient);
+    }
+
+    // Function to approve transfer of tokens from a particular address
+    function approve(address spender, uint256 amount) public returns (bool) {
+        require(spender != address(0), "ERC20: approve to the zero address");
+        allowances[uint256(uint160(msg.sender))][uint256(uint160(spender))] = amount; // Set allowance
+        emit Approval(msg.sender, spender, amount); // Emit approval event
+        return true;
+    }
+
+    // Transfer function called by external users on behalf of another address
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        uint256 currentAllowance = allowances[uint256(uint160(sender))][uint256(uint160(msg.sender))];
+        uint256 reducedAllowance = safeSub('ERC20: transfer amount exceeds allowance', currentAllowance, amount);
+        allowances[uint256(uint160(sender))][uint256(uint160(msg.sender))] = reducedAllowance; // Update remaining allowance
+        return executeTransfer(amount, sender, recipient);
+    }
+
+    // Internal function for safe subtraction
+    function safeSub(string memory errorMsg, uint256 a, uint256 b) private pure returns (uint256) {
+        require(b <= a, errorMsg);
+        return a - b;
+    }
+}
+```

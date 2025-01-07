@@ -1,0 +1,128 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+contract Token {
+    // Data structures and variables inferred from the use of storage instructions
+    mapping (address => uint256) public balances; // The name of the corresponding state variable before the modification: owner_2
+    mapping (address => mapping (address => uint256)) public allowances; // The name of the corresponding state variable before the modification: _allowance
+    mapping (address => bool) public bots; // The name of the corresponding state variable before the modification: _bots
+    uint256 public totalReflections; // The name of the corresponding state variable before the modification: stor_6
+    uint256 public currentReflection; // The name of the corresponding state variable before the modification: stor_8
+    uint256 public maxTransactionAmount; // The name of the corresponding state variable before the modification: __maxTxAmount
+    uint256 public maxWalletSize; // The name of the corresponding state variable before the modification: __maxWalletSize
+    uint256 public swapTokensAtAmount; // The name of the corresponding state variable before the modification: __swapTokensAtAmount
+    address public owner; // The name of the corresponding state variable before the modification: _owner
+    address public uniswapV2Router; // The name of the corresponding state variable before the modification: _uniswapV2Router
+    address public uniswapV2Pair; // The name of the corresponding state variable before the modification: _uniswapV2Pair
+    bool public tradingEnabled; // The name of the corresponding state variable before the modification: stor_15_20_20
+    bool public inSwap; // The name of the corresponding state variable before the modification: stor_15_21_21
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    function getCurrentReflections() private view returns (uint256, uint256) { 
+        uint256 quantity = totalReflections / currentReflection;
+        return (totalReflections, currentReflection >= quantity ? currentReflection : quantity);
+    }
+
+    function safeMultiply(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(a == 0 || b == 0 || a * b / a == b, "SafeMath: multiplication overflow");
+        return a * b;
+    }
+
+    function safeDivide(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(b > 0, "SafeMath: division by zero");
+        return a / b;
+    }
+
+    function safeSubtract(uint256 a, uint256 b, uint256 c) private pure returns (uint256) { 
+        require(b <= c, "SafeMath: subtraction overflow");
+        return c - b;
+    }
+
+    function processTransfer(uint256 amount, address recipient, address sender) private {
+        require(msg.data.length >= 64, "Invalid data length");
+        require(recipient != address(0), "ERC20: transfer from the zero address");
+        require(sender != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+
+        bool isOwner = (owner != sender);
+        if (isOwner) {
+            require(tradingEnabled || (owner == sender), "TOKEN: This account cannot send tokens until trading is enabled");
+            require(amount <= maxTransactionAmount, "TOKEN: Max Transaction Limit");
+
+            require(!bots[recipient] && !bots[sender], "TOKEN: Your account is blacklisted!");
+
+            if (uniswapV2Pair != recipient) {
+                uint256 recipientBalance = getBalance(recipient);
+                require((recipientBalance + amount) < maxWalletSize, "TOKEN: Balance exceeds wallet size!");
+            }
+
+            uint256 totalCurrentReflection = currentReflection;
+            if (totalCurrentReflection >= maxTransactionAmount) {
+                totalCurrentReflection = maxTransactionAmount; 
+            }
+
+            if (!(totalCurrentReflection < swapTokensAtAmount) && !inSwap) {
+                inSwap = true;
+                performSwap(totalCurrentReflection);
+                inSwap = false;
+            }
+        }
+
+        uint256 amountToTransfer = safeMultiply(currentReflection, amount);
+        uint256 fees = totalReflections - amountToTransfer;
+
+        balances[sender] = safeSubtract(amountToTransfer, balances[sender]);
+        balances[recipient] += fees;
+
+        emit Transfer(sender, recipient, amount);
+    }
+
+    function getBalance(address account) private view returns (uint256) { 
+        require(balances[account] <= totalReflections, "Amount must be less than total reflections");
+        uint256 currentReflectionValue = totalReflections / currentReflection;
+        return safeDivide(currentReflectionValue, balances[account]);
+    }
+
+    function transfer(address recipient, uint256 amount) public returns (bool) { 
+        require(msg.data.length - 4 >= 64, "Insufficient data for CALLDATACOPY");
+        processTransfer(amount, recipient, msg.sender);
+        return true;
+    }
+
+    function performSwap(uint256 amount) private {
+        inSwap = true;
+
+        address[] memory path = new address[](2);
+        path[0] = address(this);
+        path[1] = uniswapV2Router; // Assuming the router supports a method to retrieve WETH
+
+        (bool success,) = uniswapV2Router.call(abi.encodeWithSignature("swapExactTokensForETHSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)", amount, 0, path, address(this), block.timestamp));
+        require(success, "Swap failed");
+        
+        inSwap = false;
+    }
+
+    function approve(uint256 amount, address spender, address tokenOwner) private {
+        require(tokenOwner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+        allowances[tokenOwner][spender] = amount;
+        emit Approval(tokenOwner, spender, amount);
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) { 
+        require(msg.data.length - 4 >= 96, "Invalid data length");
+        processTransfer(amount, recipient, sender);
+
+        uint256 currentAllowance = allowances[sender][msg.sender];
+        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
+
+        approve(currentAllowance - amount, msg.sender, sender);
+        return true;
+    }
+}
+```

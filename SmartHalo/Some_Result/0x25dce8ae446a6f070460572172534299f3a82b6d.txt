@@ -1,0 +1,101 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedERC20 {
+
+    // State Variables
+    mapping(address => uint256) private balances; // STORAGE[0x0] // The name of the corresponding state variable before the modification:_balanceOf
+    mapping(address => mapping(address => uint256)) private allowances; // STORAGE[0x1] // The name of the corresponding state variable before the modification:_allowance
+    uint256 private totalSupply; // STORAGE[0x2] // The name of the corresponding state variable before the modification:_totalSupply
+    uint256 private maxTransactionAmount; // STORAGE[0x8] // The name of the corresponding state variable before the modification:_maxTransactionAmount
+    uint256 private swapTokensAtAmount; // STORAGE[0x9] // The name of the corresponding state variable before the modification:_swapTokensAtAmount
+    uint256 private maxWallet; // STORAGE[0xa] // The name of the corresponding state variable before the modification:_maxWallet
+    uint256 private buyTotalFees; // STORAGE[0xc] // The name of the corresponding state variable before the modification:_buyTotalFees
+    uint256 private buyDevFee; // STORAGE[0xd] // The name of the corresponding state variable before the modification:_buyDevFee
+    uint256 private buyLiquidityFee; // STORAGE[0xe] // The name of the corresponding state variable before the modification:_buyLiquidityFee
+    uint256 private sellTotalFees; // STORAGE[0xf] // The name of the corresponding state variable before the modification:_sellTotalFees
+    uint256 private sellDevFee; // STORAGE[0x10] // The name of the corresponding state variable before the modification:_sellDevFee
+    uint256 private sellLiquidityFee; // STORAGE[0x11] // The name of the corresponding state variable before the modification:_sellLiquidityFee
+    mapping(address => bool) private isExcludedFromFees; // STORAGE[0x12] // The name of the corresponding state variable before the modification:_isExcludedFromFees
+    mapping(address => bool) private isExcludedMaxTransactionAmount; // STORAGE[0x13] // The name of the corresponding state variable before the modification:__isExcludedMaxTransactionAmount
+    bool private limitsInEffect; // STORAGE[0xb] // The name of the corresponding state variable before the modification:_limitsInEffect
+    bool private tradingActive; // STORAGE[0xb] // The name of the corresponding state variable before the modification:_tradingActive
+    bool private swapEnabled; // STORAGE[0xb] // The name of the corresponding state variable before the modification:_swapEnabled
+    address private owner; // STORAGE[0x5] // The name of the corresponding state variable before the modification:_owner
+    address private uSDC; // STORAGE[0x6] // The name of the corresponding state variable before the modification:_uSDC
+    address private devWallet; // STORAGE[0x7] // The name of the corresponding state variable before the modification:_devWallet
+
+    event DevWalletUpdated(address indexed previousWallet, address indexed newWallet);
+    event ExcludeFromFees(address indexed account, bool isExcluded);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Private transfer function with more explicit variable names and checks
+    function _transfer(uint256 amount, address to, address from) private {
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(balances[from] >= amount, "ERC20: transfer amount exceeds balance");
+
+        bool isFromExcluded = isExcludedFromFees[from];
+        bool isToExcluded = isExcludedFromFees[to];
+
+        if (!tradingActive && !isFromExcluded && !isToExcluded) {
+            revert("Trading is not active.");
+        }
+
+        if (limitsInEffect) {
+            if (!isFromExcluded) {
+                require(amount <= maxTransactionAmount, "Buy transfer amount exceeds the maxTransactionAmount.");
+                require(balances[to] + amount <= maxWallet, "Max wallet exceeded");
+            }
+        }
+
+        // Transfer the amount
+        balances[from] -= amount;
+        balances[to] += amount;
+        emit Transfer(from, to, amount);
+    }
+
+    function _safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a + b >= a, "SafeMath: addition overflow");
+        return a + b;
+    }
+
+    function _safeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b <= a, "SafeMath: subtraction overflow");
+        return a - b;
+    }
+
+    function _safeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a == 0 || a * b / a == b, "SafeMath: multiplication overflow");
+        return a * b;
+    }
+
+    function _safeDiv(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b > 0, "SafeMath: division by zero");
+        return a / b;
+    }
+
+    function transfer(address to, uint256 amount) public returns (bool) {
+        require(msg.data.length >= 64, "Insufficient data length"); // Check that message data has enough length
+        _transfer(amount, to, msg.sender);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public returns (bool) {
+        require(msg.data.length >= 96, "Insufficient data length"); // Check that message data has enough length
+        require(allowances[from][msg.sender] >= amount, "ERC20: transfer amount exceeds allowance");
+        _transfer(amount, to, from);
+        allowances[from][msg.sender] -= amount; // Safely decrease allowance
+        return true;
+    }
+
+    function approve(address spender, uint256 amount) public returns (bool) {
+        allowances[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+}
+```

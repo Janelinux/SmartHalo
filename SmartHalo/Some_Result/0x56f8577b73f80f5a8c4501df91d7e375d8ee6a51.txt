@@ -1,0 +1,17 @@
+```solidity
+pragma solidity ^0.8.17;
+
+contract ImplementationContract { 
+    uint256 private fallbackImplementation;
+
+    // Function to retrieve the fallback implementation address
+    function getImplementation() public view returns (uint256) { 
+        return fallbackImplementation; 
+    }
+
+    // Function that utilizes the getImplementation method
+    function __function_selector__() public view returns (uint256) { 
+        return getImplementation(); 
+    }
+}
+```

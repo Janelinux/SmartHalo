@@ -1,0 +1,123 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
+
+contract FineTunedContract {
+    // State Variables
+    uint256 public totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    uint256[] public airdropList1; // The name of the corresponding state variable before the modification:array_3
+    uint256[] public airdropList2; // The name of the corresponding state variable before the modification:array_4
+    uint256 public unspecifiedStorage; // The name of the corresponding state variable before the modification:stor_5
+    mapping (uint256 => uint256) public balanceOf; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping (uint256 => mapping (uint256 => uint256)) public allowance; // The name of the corresponding state variable before the modification:_allowance
+    mapping (uint256 => uint256) public ownersEth; // The name of the corresponding state variable before the modification:owner_9
+    mapping (uint256 => uint256) public ownersAddress1; // The name of the corresponding state variable before the modification:owner_a
+    mapping (uint256 => uint256) public ownersAddress2; // The name of the corresponding state variable before the modification:owner_b
+    mapping (uint256 => uint256) public ownersAddress3; // The name of the corresponding state variable before the modification:owner_c
+    mapping (uint256 => uint256) public ownersAddress4; // The name of the corresponding state variable before the modification:owner_d
+    mapping (uint256 => uint256) public lastAllocationTime; // The name of the corresponding state variable before the modification:map_e
+    uint256 public initiator; // The name of the corresponding state variable before the modification:_getOwner
+    uint256 public decimals; // The name of the corresponding state variable before the modification:_decimals
+    uint256 public storageVar1; // The name of the corresponding state variable before the modification:stor_6_0_19
+    uint256 public storageVar2; // The name of the corresponding state variable before the modification:stor_f_0_19
+    uint256 public storageVar3; // The name of the corresponding state variable before the modification:stor_10_0_19
+    uint256 public viewPair; // The name of the corresponding state variable before the modification:_view_pair
+    uint256 public burnAmount; // The name of the corresponding state variable before the modification:_burn
+    uint256 public maximumLimit; // The name of the corresponding state variable before the modification:_set_max
+    uint256 public ownerAddress; // The name of the corresponding state variable before the modification:owner_14_0_19
+    uint256 public storageVar4; // The name of the corresponding state variable before the modification:stor_15_0_19
+    uint256 public singleStorageFlag; // The name of the corresponding state variable before the modification:stor_f_20_20
+    uint256 public initiate; // The name of the corresponding state variable before the modification:_initiate
+
+    // Events
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Safe arithmetic functions
+    function safeMul(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(!(a != 0 && b > type(uint256).max / a), "Arithmetic overflow or underflow");
+        return a * b;
+    }
+
+    function safeDiv(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(b > 0, "Division by zero");
+        return a / b;
+    }
+
+    function allocateMemory(uint256 size, uint256 availableSize) private pure returns (uint256[] memory) { 
+        require(availableSize >= size + 32, "Insufficient memory size");
+        require(size <= type(uint256).max, "Memory overflow");
+        uint256 memLoc = size;
+        require(memLoc + 32 < availableSize, "Exceeded available size");
+        
+        uint256[] memory newArray = new uint256[](size);
+        require(newArray.length <= availableSize, "Failed memory allocation");
+
+        for (uint256 i = 0; i < size; i++) {
+            newArray[i] = 0; // Initializing array to zero as MEM is not defined in Solidity
+        }
+        return newArray;
+    }
+
+    function safeSub(uint256 a, uint256 b, uint256 fallbackVal) private pure returns (uint256) { 
+        if (b <= fallbackVal) {
+            return fallbackVal - b;
+        } else {
+            revert("Subtraction failed");
+        }
+    }
+
+    function increment(uint256 value) private pure returns (uint256) { 
+        require(value != type(uint256).max, "Arithmetic overflow or underflow");
+        return value + 1;
+    }
+
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(a <= type(uint256).max - b, "Arithmetic overflow or underflow");
+        return a + b;
+    }
+
+    function safeExp(uint256 base, uint256 exp, uint256 limit) private pure returns (uint256) { 
+        if (exp == 0) { return 1; }
+        if (base == 0) { return 0; }
+        
+        if (base == 1) { return 1; }
+        if (base == 2) {
+            require(exp <= 255, "Arithmetic overflow or underflow");
+            require(2 ** exp <= limit, "Limit exceeded");
+            return 2 ** exp;
+        }
+
+        uint256 result = 1;
+        while (exp > 1) {
+            require(base <= limit / base, "Arithmetic overflow or underflow");
+            if (exp & 0x1 != 0) { result *= base; }
+            base *= base;
+            exp = exp >> 1;
+        }
+        require(result <= limit / base, "Arithmetic overflow or underflow");
+        return result * base;
+    }
+
+    // Airdrop function
+    function airdrop(address[] memory recipients) public payable { 
+        require(msg.value >= 64, "Insufficient memory size");
+        require(recipients.length <= type(uint256).max, "Too many recipients");
+
+        uint256[] memory values = new uint256[](recipients.length);
+        require(values.length <= type(uint256).max, "Memory allocation failure");
+
+        for (uint256 i = 0; i < recipients.length; i++) {
+            require(msg.sender == maximumLimit, "Unauthorized sender");
+            
+            // Calculate the airdrop amount, applying relevant logic here
+            uint256 airdropAmount = safeDiv(safeMul(2, totalSupply), 100); // Calculating 2% of total supply
+            
+            // Perform transfers and allocations here. 
+            balanceOf[uint256(uint160(recipients[i]))] = safeAdd(balanceOf[uint256(uint160(recipients[i]))], airdropAmount);
+            emit Transfer(address(this), recipients[i], airdropAmount);
+        }
+    }
+}
+```

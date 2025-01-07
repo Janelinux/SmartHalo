@@ -1,0 +1,70 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Token {
+    uint256 private totalSupply; // STORAGE[0x0] //The name of the corresponding state variable before the modification:_totalSupply
+    string private name; // STORAGE[0x1] //The name of the corresponding state variable before the modification:_name
+    string private symbol; // STORAGE[0x2] //The name of the corresponding state variable before the modification:_symbol
+    mapping(address => uint256) private balances; // STORAGE[0x3] //The name of the corresponding state variable before the modification:_balanceOf
+    mapping(uint256 => mapping(address => uint256)) private approvals; // STORAGE[0x4] //The name of the corresponding state variable before the modification:_approve
+    mapping(address => mapping(address => bool)) private isApprovedForAll; // STORAGE[0x5] //The name of the corresponding state variable before the modification:_isApprovedForAll
+    uint256 private mintCost; // STORAGE[0x6] //The name of the corresponding state variable before the modification:_cost
+    uint256 private maxSupply; // STORAGE[0x7] //The name of the corresponding state variable before the modification:_maxSupply
+    uint256 private maxMintAmount; // STORAGE[0x8] //The name of the corresponding state variable before the modification:_maxMintAmount
+    bool private paused; // STORAGE[0x9] //The name of the corresponding state variable before the modification:_paused
+    address private owner; // STORAGE[0xa] //The name of the corresponding state variable before the modification:_owner
+    string private baseTokenURI; // STORAGE[0xb] //The name of the corresponding state variable before the modification:__baseTokenURI
+
+    // Events
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    function safeDiv(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(b > 0, "Division by zero");
+        return a / b;
+    }
+
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(a <= type(uint256).max - b, "Overflow error");
+        return a + b;
+    }
+
+    function tokenURI(uint256 tokenId) public view returns (string memory) { 
+        require(tokenId < totalSupply, "URI does not exist!");
+        uint256 baseUriLength = bytes(baseTokenURI).length; // v1
+        bytes memory uriBytes = new bytes(baseUriLength); // v0 - consistent with v1
+        for (uint256 i = 0; i < baseUriLength; i++) {
+            uriBytes[i] = bytes(baseTokenURI)[i]; // Ensure uriBytes' type is consistent with baseTokenURI
+        }
+
+        if (tokenId != 0) {
+            uint256 tempId = tokenId;
+            uint256 digitsCount = 0; // v3
+            while (tempId != 0) {
+                digitsCount++;
+                tempId = safeDiv(tempId, 10); // v0 depends on v3
+            }
+
+            require(digitsCount <= type(uint256).max, "Too many digits");
+            bytes memory tokenIdBytes = new bytes(digitsCount);
+            for (uint256 i = digitsCount; i > 0; i--) {
+                require(tokenId >= 1, "Negative tokenId error");
+                tokenIdBytes[i - 1] = bytes1(uint8(48 + (tokenId % 10)));
+                tokenId = safeDiv(tokenId, 10);
+            }
+
+            return string(abi.encodePacked(string(uriBytes), string(tokenIdBytes), ".json"));
+        } else {
+            return string(abi.encodePacked("Invalid tokenId"));
+        }
+    }
+
+    function checkTokenExists(uint256 tokenId) private view returns (bool) { 
+        require(tokenId < totalSupply, "Token ID out of range");
+        return approvals[tokenId][msg.sender] != 0; // Assuming map_4 was previously intended for approvals
+    }
+}
+```

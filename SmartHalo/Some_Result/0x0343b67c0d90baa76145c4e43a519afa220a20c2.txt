@@ -1,0 +1,20 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract MyContract {
+    mapping (uint256 => uint256) private _manualswap;
+    mapping (uint256 => mapping (uint256 => uint256)) private _increaseAllowance;
+    uint256 private _totalSupply;
+    uint256[] private _array_3;
+    uint256[] private _array_4;
+    mapping (uint256 => RoleAdmin) private _getRoleAdmin;
+    mapping (uint256 => uint256) private _limtcheck;
+    uint256 private _sellerFee;
+    uint256 private _buyerFee;
+    uint256 private _txFee;
+    uint256 private _maxWallet;
+    bool private _inSwapAndLiquify;
+    address private _uniswapV2Router;
+}
+```

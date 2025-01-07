@@ -1,0 +1,119 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+contract FineTunedContract {
+    // State Variables
+    mapping(uint256 => uint256) public manualSwap; // The name of the corresponding state variable before the modification:_manualSwap
+    mapping(uint256 => mapping(uint256 => uint256)) public allowance; // The name of the corresponding state variable before the modification:_allowance
+    mapping(uint256 => uint256) public botStatus; // The name of the corresponding state variable before the modification:_isBot
+    mapping(uint256 => uint256) public ownerTransactionCount; // The name of the corresponding state variable before the modification:owner_5
+    uint256 public maxTxAmount; // The name of the corresponding state variable before the modification:__maxTxAmount
+    uint256 public maxWalletSize; // The name of the corresponding state variable before the modification:__maxWalletSize
+    uint256 public taxSwapThreshold; // The name of the corresponding state variable before the modification:__taxSwapThreshold
+    uint256 public maxTaxSwap; // The name of the corresponding state variable before the modification:__maxTaxSwap
+    address public owner; // The name of the corresponding state variable before the modification:_owner
+    bool public transferDelayEnabled; // The name of the corresponding state variable before the modification:_transferDelayEnabled
+    uint256 public lastTransactionBlock; // The name of the corresponding state variable before the modification:stor_10_0_19
+    uint256 public lastSwapBlock; // The name of the corresponding state variable before the modification:stor_b
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event MaxTxAmountUpdated(uint256 newMaxTxAmount);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Safe Multiply Function
+    function safeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        require((b == 0) || (a == (a * b) / b), "Arithmetic overflow or underflow");
+        return a * b;
+    }
+
+    // Get Minimum Function
+    function getMin(uint256 a, uint256 b) private pure returns (uint256) {
+        return a < b ? a : b;
+    }
+
+    // Custom Transfer Logic
+    function _transfer(uint256 amount, address to, address from) private {
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+
+        uint256 totalSenderBalance = manualSwap[from];
+        
+        // Check if sender has enough balance
+        require(totalSenderBalance >= amount, "Insufficient balance");
+        
+        // Delay and Bot Checks
+        if (transferDelayEnabled && lastTransactionBlock != from) {
+            require(block.number > ownerTransactionCount[tx.origin], 
+                    "Transfer Delay enabled. Only one purchase per block allowed.");
+            ownerTransactionCount[tx.origin] = block.number;
+        }
+
+        // Fee Calculation Logic
+        uint256 fee = 0;
+        if (lastSwapBlock != address(0)) {
+            fee = (amount * taxSwapThreshold) / 100; // Example logic for fees
+        }
+
+        require(totalSenderBalance >= amount + fee, "Transfer amount exceeds allowance");
+
+        // Update Balances
+        manualSwap[from] = totalSenderBalance - amount - fee;
+        manualSwap[to] += amount;
+
+        emit Transfer(from, to, amount);
+
+        // Emit transfer of fee if applicable
+        if (fee > 0) {
+            manualSwap[address(this)] += fee; // Assuming contract takes fee
+            emit Transfer(from, address(this), fee);
+        }
+    }
+
+    // Transfer Function
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(msg.data.length - 4 >= 64, "Insufficient data length"); // Check for sufficient data
+        _transfer(amount, recipient, msg.sender);
+        return true;
+    }
+
+    // Transfer From Function
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        require(msg.data.length - 4 >= 96, "Insufficient data length"); // Check for sufficient data
+        uint256 currentAllowance = allowance[sender][msg.sender]; 
+        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
+        allowance[sender][msg.sender] -= amount;
+
+        _transfer(amount, recipient, sender);
+        return true;
+    }
+
+    // Safe Addition with Overflow Check
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a + b >= a, "Arithmetic overflow or underflow");
+        return a + b;
+    }
+
+    // Approve Function
+    function approve(address spender, uint256 amount) public returns (bool) {
+        require(spender != address(0), "ERC20: approve to the zero address");
+        allowance[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
+    // Example external contract interaction function
+    function exampleExternalCall(uint256 amount, address recipient) private {
+        require(amount > 0, "Amount must be greater than zero");
+        require(recipient != address(0), "Recipient cannot be zero address");
+
+        (bool success, bytes memory data) = address(0xc67).call(
+            abi.encodeWithSignature("functionName(uint256,address,address)", amount, recipient, msg.sender)
+        );
+        require(success, "External call failed");
+    }
+}
+```

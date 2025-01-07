@@ -1,0 +1,14 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    // Represents the fallback implementation address
+    address private fallbackImplementation; // The name of the corresponding state variable before the modification: _fallback
+
+    // This function retrieves the address of the fallback implementation
+    function getFallbackImplementation() public view returns (address) { // The function name changed for clarity
+        return fallbackImplementation; // Return the current implementation address
+    }
+}
+```

@@ -1,0 +1,97 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedSmartContract {
+    // Define state variables with appropriate names and types
+    uint256 private initialized; // STORAGE[0x0] bytes 0 to 0 //The name of the corresponding state variable before the modification: _initialize
+    bool private isInitializing; // STORAGE[0x1] //The name of the corresponding state variable before the modification: stor_0_1_1
+
+    string[] private names; // STORAGE[0x65] //The name of the corresponding state variable before the modification: _name
+    string[] private symbols; // STORAGE[0x66] //The name of the corresponding state variable before the modification: _symbol
+
+    mapping(uint256 => uint256) private transfers; // STORAGE[0x67] //The name of the corresponding state variable before the modification: _transferFrom
+    mapping(uint256 => uint256) private owners; // STORAGE[0x68] //The name of the corresponding state variable before the modification: owner_68
+    mapping(uint256 => uint256) private approvals; // STORAGE[0x69] //The name of the corresponding state variable before the modification: _approve
+    mapping(uint256 => uint256) private approvalForAll; // STORAGE[0x6a] //The name of the corresponding state variable before the modification: _isApprovedForAll
+    mapping(uint256 => uint256) private tokenOfOwnerByIndex; // STORAGE[0x97] //The name of the corresponding state variable before the modification: _tokenOfOwnerByIndex
+    mapping(uint256 => uint256) private additionalMapping98; // STORAGE[0x98] //The name of the corresponding state variable before the modification: map_98
+    uint256 private totalSupply; // STORAGE[0x99] //The name of the corresponding state variable before the modification: _totalSupply
+
+    // Several mappings for tracking drawings or prizes
+    mapping(uint256 => uint256) private giveawayWinners; // STORAGE[0x1fe] //The name of the corresponding state variable before the modification: _giveawayWinners
+    mapping(uint256 => uint256) private aSLTReserved; // STORAGE[0x1ff] //The name of the corresponding state variable before the modification: _aSLTReserved
+
+    uint256 private commanderProvenance; // STORAGE[0x1f6] //The name of the corresponding state variable before the modification: _commanderProvenance
+    uint256 private maxCommanders; // STORAGE[0x1f7] //The name of the corresponding state variable before the modification: _maxCommanders
+    uint256 private reservePrice; // STORAGE[0x1f8] //The name of the corresponding state variable before the modification: _reservePrice
+    uint256 private giveawayAllocation; // STORAGE[0x1f9] //The name of the corresponding state variable before the modification: _giveawayAllocation
+    uint256 private giveawayReserved; // STORAGE[0x1fa] //The name of the corresponding state variable before the modification: _giveawayReserved
+    uint256 private maxMintPerTransaction; // STORAGE[0x1fb] //The name of the corresponding state variable before the modification: _maxMint
+    uint256 private commanderPrice; // STORAGE[0x1fc] //The name of the corresponding state variable before the modification: _commanderPrice
+    uint256 private discountPrice; // STORAGE[0x1fd] //The name of the corresponding state variable before the modification: _discountPrice
+
+    string[] private baseURI; // STORAGE[0x201] //The name of the corresponding state variable before the modification: _baseURI
+    bool private earlyIsActive; // STORAGE[0x202] //The name of the corresponding state variable before the modification: _earlyIsActive
+    uint256 private tempStorage203; // STORAGE[0x203] //The name of the corresponding state variable before the modification: stor_203
+    uint256 private tempStorage204; // STORAGE[0x204] //The name of the corresponding state variable before the modification: stor_204
+
+    bool private paused; // STORAGE[0xfb] bytes 0 to 0 //The name of the corresponding state variable before the modification: _paused
+    address private owner; // STORAGE[0x12d] bytes 0 to 19 //The name of the corresponding state variable before the modification: _owner
+    address private aSLTAddress; // STORAGE[0x200] bytes 0 to 19 //The name of the corresponding state variable before the modification: _aSLTAddress
+
+    // Events to emit during state changes
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Unpaused(address account);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Paused(address account);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Upgraded(address indexed implementation);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Initialize function with access control
+    function initialize() public { 
+        // Check if the contract is already initialized
+        require(initialized == 0, "Initializable: contract is already initialized");
+        
+        // Set initial settings
+        if (!isInitializing) {
+            isInitializing = true; // Set the initializing state
+            totalSupply = 257; // Initialize total supply
+        }
+        
+        // Setting up names
+        names.push("CryptoCommanders"); // Default name
+        
+        // Setting up symbols
+        symbols.push("CC"); // Default symbol
+        
+        // Setting up remaining states
+        initializeSettings();
+    }
+
+    // Private function to handle additional setups
+    function initializeSettings() private {
+        require(isInitializing, "Initializable: contract is not initializing");
+        
+        paused = false; // Unpause contract by default
+        owner = msg.sender; // Set the owner of the contract
+        emit OwnershipTransferred(address(0), owner); // Emit event for ownership change
+        
+        // Example settings for max limits and pricing
+        maxCommanders = 11111;
+        reservePrice = 0.1 ether;
+        giveawayAllocation = 1111;
+        giveawayReserved = 0;
+        maxMintPerTransaction = 20;
+        commanderPrice = 0.2 ether;
+        discountPrice = 0.15 ether;
+        
+        // Initialize base URI
+        baseURI.push("https://example.com/api/"); // Default base URI
+        
+        // Final checks for initialization
+        isInitializing = false; // Reset initialization state
+    }
+}
+```

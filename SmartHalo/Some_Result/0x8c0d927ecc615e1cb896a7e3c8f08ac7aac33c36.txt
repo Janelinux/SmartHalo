@@ -1,0 +1,20 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+contract TokenContract {
+    // State Variables
+    uint256 public totalSupply; // STORAGE[0x1]
+    uint256[] public tokenURIs; // STORAGE[0x2]
+    mapping(uint256 => uint256) public numberMinted; // STORAGE[0x5]
+    mapping(uint256 => uint256) public approvedTokens; // STORAGE[0x6]
+    mapping(uint256 => mapping(uint256 => uint256)) public isApprovedForAll; // STORAGE[0x7]
+    uint256 public maxSupply; // STORAGE[0xe]
+    uint256 public wlCost; // STORAGE[0xd]
+    uint256 public paused; // STORAGE[0x14] bytes 0 to 0
+    uint256 public revealed; // STORAGE[0x14] bytes 1 to 1
+    uint256 public preSale; // STORAGE[0x14] bytes 2 to 2
+    uint256 public publicSale; // STORAGE[0x14] bytes 3 to 3
+    uint256[] public whitelistMinted; // STORAGE[0x17]
+}
+```

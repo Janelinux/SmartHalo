@@ -1,0 +1,145 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract Staking {
+
+    // Storage Variables
+    uint256 public bonusEndBlock; // The name of the corresponding state variable before the modification:_bonusEndBlock
+    uint256 public initRewardPerBlock; // The name of the corresponding state variable before the modification:_initRewardPerBlock
+    uint256 public halvingPeriod; // The name of the corresponding state variable before the modification:_halvingPeriod
+    uint256 public halvingTimes; // The name of the corresponding state variable before the modification:_halvingTimes
+    uint256[] public poolLength; // The name of the corresponding state variable before the modification:_poolLength
+    mapping (address => uint256[]) public userInfo; // The name of the corresponding state variable before the modification:_userInfo
+    uint256 public totalAllocPoint; // The name of the corresponding state variable before the modification:_totalAllocPoint
+    uint256 public startBlock; // The name of the corresponding state variable before the modification:_startBlock
+    address public owner; // The name of the corresponding state variable before the modification:_owner
+    address public token; // The name of the corresponding state variable before the modification:_token
+    address public devaddr; // The name of the corresponding state variable before the modification:_devaddr
+
+    // Events
+    event Withdraw(address indexed user, uint256 poolId, uint256 amount);
+    event EmergencyWithdraw(address indexed user, uint256 poolId, uint256 amount);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Deposit(address indexed user, uint256 poolId, uint256 amount);
+
+    // Modifier to check if the sender is the owner
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Ownable: caller is not the owner");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function safeTransfer(uint256 amount, address recipient) private {
+        require(amount > 0, "Amount should be greater than zero.");
+        require(isContract(token), "Token contract not found.");
+        
+        uint256 availableBalance = IERC20(token).balanceOf(address(this));
+        
+        require(availableBalance > 0, "Insufficient balance");
+        
+        if (amount <= availableBalance) {
+            require(IERC20(token).transfer(recipient, amount), "Transfer failed.");
+        } else {
+            require(IERC20(token).transfer(recipient, availableBalance), "Transfer failed.");
+        }
+    }
+
+    function safeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        if (b == 0) {
+            return 0;
+        }
+        uint256 result = a * b;
+        require(result / b == a, "SafeMath: multiplication overflow");
+        return result;
+    }
+
+    function calculateBonusMultiplier() private view returns (uint256) {
+        uint256 blocksPassed = block.number - startBlock;
+        uint256 multiplier = halvingPeriod / blocksPassed;
+
+        if (multiplier <= halvingTimes) {
+            return safeDiv(2 ** multiplier, initRewardPerBlock);
+        } else {
+            return 0;
+        }
+    }
+
+    function calculateReward(uint256 start, uint256 end) private view returns (uint256) {
+        uint256 rewardAmount;
+        
+        if (start > bonusEndBlock) {
+            if (end < bonusEndBlock) {
+                uint256 deltaBlocks = bonusEndBlock - start;
+                uint256 additionalBlocks = end - bonusEndBlock;
+                rewardAmount = deltaBlocks + additionalBlocks;
+                require(rewardAmount >= additionalBlocks, "SafeMath: addition overflow");
+            } else {
+                rewardAmount = end - start;
+            }
+        } else {
+            rewardAmount = end - start;
+        }
+        
+        return rewardAmount;
+    }
+
+    function safeDiv(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b > 0, "SafeMath: division by zero");
+        return a / b; 
+    }
+
+    function safeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= b, "SafeMath: subtraction underflow");
+        return b - a; 
+    }
+
+    function isContract(address account) private view returns (bool) {
+        return account.code.length > 0;
+    }
+
+    function deposit(uint256 poolId, uint256 amount) public payable {
+        require(msg.data.length - 4 >= 64, "Invalid data length");
+        require(poolId < poolLength.length, "Pool does not exist");
+        
+        require(block.number > getLastUpdatedBlock(poolId), "Cannot deposit at this block");
+        require(isContract(address(poolLength[poolId])), "Pool is not a contract");
+
+        uint256 userBalance = userInfo[msg.sender].length > 0 ? userInfo[msg.sender][0] : 0;
+        uint256 depositReward;
+
+        if (userBalance > 0) {
+            uint256 stakedAmount = safeMul(initRewardPerBlock, userBalance);
+            depositReward = safeDiv(depositReward, stakedAmount);
+            safeTransfer(depositReward, msg.sender);
+        }
+
+        address poolAddress = address(poolLength[poolId]);
+        require(IERC20(poolAddress).transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        
+        if (poolAddress != address(0)) {
+            userInfo[msg.sender][0] += amount;
+            uint256 pendingReward = safeMul(poolId, amount); // Using poolId directly for clarity
+            userInfo[msg.sender][1] = safeDiv(pendingReward, amount);
+            
+            emit Deposit(msg.sender, poolId, amount);
+        } else {
+            revert("Address: call to non-contract");
+        }
+    }
+
+    // Placeholder method for illustration
+    function getLastUpdatedBlock(uint256 poolId) private view returns (uint256) {
+        return block.number - 1; // This should return the block number when the pool was last updated
+    }
+}
+
+// Interface for ERC20 functions used
+interface IERC20 {
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
+}
+```

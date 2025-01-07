@@ -1,0 +1,19 @@
+    function set(Map storage map, address key, uint val) public {
+
+        if (map.inserted[key]) {
+
+            map.values[key] = val;
+
+        } else {
+
+            map.inserted[key] = true;
+
+            map.values[key] = val;
+
+            map.indexOf[key] = map.keys.length;
+
+            map.keys.push(key);
+
+        }
+
+    }

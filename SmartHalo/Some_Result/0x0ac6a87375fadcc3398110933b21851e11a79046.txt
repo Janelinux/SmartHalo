@@ -1,0 +1,95 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    uint256[] private names; // The name of the corresponding state variable before the modification:_name
+    uint256[] private symbols; // The name of the corresponding state variable before the modification:_symbol
+    string[] private baseURIs; // The name of the corresponding state variable before the modification:_setBaseURI
+
+    mapping (uint256 => string) private tokenNames; // The name of the corresponding state variable before the modification:_tokenName
+    mapping (uint256 => string) private tokenIPFSHashes; // The name of the corresponding state variable before the modification:_tokenIPFSHash
+    mapping (uint256 => address) private transfers; // The name of the corresponding state variable before the modification:_transferFrom
+    mapping (uint256 => uint256) private balances; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping (uint256 => mapping(address => bool)) private approvalForAll; // The name of the corresponding state variable before the modification:_isApprovedForAll
+    uint256[] private creators; // The name of the corresponding state variable before the modification:_creator
+    mapping (uint256 => uint256) private mintCounts; // The name of the corresponding state variable before the modification:__mintCount
+    mapping (uint256 => bool) private finalizedStatus; // The name of the corresponding state variable before the modification:__getFinalized
+
+    event ConsecutiveTransfer(uint256 fromTokenId, uint256 toTokenId, address from, address to);
+    event ApprovalForAll(address owner, address operator, bool approved);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+
+    function convertToBytes(uint256 value) private pure returns (bytes memory) {
+        uint256 length = 0;
+        uint256 temp = value;
+        while (temp != 0) {
+            length++;
+            temp = safeDiv(temp, 10);
+        }
+
+        require(length <= 0xffffffffffffffff, "Panic: Length too large");
+
+        bytes memory result = new bytes(length);
+        if (length > 0) {
+            // Initialize memory and zero out result array
+            assembly {
+                let resultPtr := add(result, 0x20)
+                for { let i := 0 } lt(i, length) { i := add(i, 1) } {
+                    mstore8(add(resultPtr, i), 0)
+                }
+            }
+        }
+
+        while (value != 0) {
+            length--;
+            uint256 digit = safeMod(value, 10);
+            uint256 charCode = safeAdd(48, digit);
+            require(length < result.length, "Panic: Array out of bounds");
+            result[length] = bytes1(uint8(charCode));
+            value = safeDiv(value, 10);
+        }
+
+        return result;
+    }
+
+    function safeDiv(uint256 numerator, uint256 denominator) private pure returns (uint256) {
+        require(denominator > 0, "Panic: Division by zero");
+        return numerator / denominator;
+    }
+    
+    function safeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a >= b, "Panic: Overflow on subtraction");
+        return a - b;
+    }
+    
+    function safeMod(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b > 0, "Panic: Modulo by zero");
+        return a % b;
+    }
+    
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= type(uint256).max - b, "Panic: Overflow on addition");
+        return a + b;
+    }
+
+    function increment(uint256 value) private pure returns (uint256) {
+        require(value != type(uint256).max, "Panic: Overflow on increment");
+        return value + 1;
+    }
+
+    function tokenURI(uint256 tokenId) public view returns (string memory) {
+        require(transfers[tokenId] != address(0), "ERC721Metadata: URI query for nonexistent token");
+
+        bytes memory encodedTokenId = convertToBytes(tokenId);
+        uint256 baseURIIndex = baseURIs.length;
+        
+        require(baseURIIndex > 0, "No base URI available");
+        
+        string memory finalURI = string(abi.encodePacked(baseURIs[baseURIIndex - 1], encodedTokenId));
+        
+        return finalURI;
+    }
+}
+```

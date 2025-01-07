@@ -1,0 +1,25 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract ImplementationContract {
+    // State variable to store the address of the implementation contract.
+    uint256 private implementationAddress; // The name of the corresponding state variable before the modification:_fallback
+
+    /**
+     * @notice Returns the address of the implementation contract.
+     * @dev This function is marked as non-payable, meaning it cannot receive Ether.
+     * It simply retrieves the stored implementation address from the state variable.
+     * 
+     * Execution Logic:
+     * 1. The function is defined as public, allowing it to be called from outside the contract.
+     * 2. It is marked as view, indicating that it reads data from the state but does not modify it.
+     * 3. The function retrieves the value of the `implementationAddress` state variable, 
+     *    which holds the address of the implementation contract.
+     * 4. The retrieved address is returned as a `uint256` value, which can be cast 
+     *    to an Ethereum address if necessary.
+     */
+    function getImplementationAddress() public view returns (uint256) { 
+        return implementationAddress; 
+    }
+}
+```

@@ -1,0 +1,119 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
+
+contract OptimizedTokenContract {
+    uint256 public totalSupply; //To replace _totalSupply
+    mapping(address => uint256) public balanceOf; //To replace _balanceOf
+    mapping(address => mapping(address => uint256)) public allowance; //To replace _approve
+    string public name; //To replace _name
+    string public symbol; //To replace _symbol
+    mapping(address => bool) public isSendingLocked; //To replace _getIsSendingLocked
+    uint256 public decimals; //To replace _decimals
+    bool public allTransfersLocked; //To replace _getIsAllTransfersLocked
+
+    struct TransferHistory {
+        uint256 amount; // Transfer amount
+        uint256 timestamp; // Transfer timestamp
+    }
+
+    mapping(address => TransferHistory[]) public transferRecords; //To replace owner_c
+
+    // Events
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event AllTransfersLocked(bool status);
+
+    modifier onlyWhenNotLocked() {
+        require(!allTransfersLocked, "Transfers are currently locked");
+        _;
+    }
+
+    // Safe multiplication function
+    function safeMultiply(uint256 a, uint256 b) private pure returns (uint256) {
+        require(!(a > 0 && b > type(uint256).max / a), "Multiplication overflow");
+        return a * b;
+    }
+
+    // Safe subtraction function
+    function safeSubtract(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a >= b, "Subtraction overflow");
+        return a - b;
+    }
+
+    // Safe addition function
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a + b >= a, "Addition overflow");
+        return a + b;
+    }
+
+    function airdropIndividual(address[] calldata recipients, uint256[] calldata amounts) public onlyWhenNotLocked {
+        require(recipients.length == amounts.length, "Mismatched input arrays");
+        require(recipients.length <= 50, "Too many recipients");
+
+        for (uint256 i = 0; i < recipients.length; i++) {
+            require(recipients[i] != address(0), "Invalid address");
+            require(amounts[i] > 0, "Amount should be greater than zero");
+
+            balanceOf[recipients[i]] = safeAdd(balanceOf[recipients[i]], amounts[i]);
+            totalSupply = safeAdd(totalSupply, amounts[i]);
+            emit Transfer(msg.sender, recipients[i], amounts[i]);
+        }
+    }
+
+    function transfer(address to, uint256 amount) public onlyWhenNotLocked returns (bool) {
+        require(to != address(0), "Invalid address");
+        require(amount <= balanceOf[msg.sender], "Insufficient balance");
+
+        balanceOf[msg.sender] = safeSubtract(balanceOf[msg.sender], amount);
+        balanceOf[to] = safeAdd(balanceOf[to], amount);
+
+        // Recording transfer history
+        transferRecords[msg.sender].push(TransferHistory(amount, block.timestamp));
+        
+        emit Transfer(msg.sender, to, amount);
+        return true;
+    }
+
+    function approve(address spender, uint256 amount) public onlyWhenNotLocked returns (bool) {
+        require(spender != address(0), "Invalid address");
+        allowance[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public onlyWhenNotLocked returns (bool) {
+        require(from != address(0), "Invalid from address");
+        require(to != address(0), "Invalid to address");
+        require(amount <= balanceOf[from], "Insufficient balance");
+        require(amount <= allowance[from][msg.sender], "Allowance exceeded");
+
+        balanceOf[from] = safeSubtract(balanceOf[from], amount);
+        balanceOf[to] = safeAdd(balanceOf[to], amount);
+        allowance[from][msg.sender] = safeSubtract(allowance[from][msg.sender], amount);
+
+        // Recording transfer history
+        transferRecords[from].push(TransferHistory(amount, block.timestamp));
+        
+        emit Transfer(from, to, amount);
+        return true;
+    }
+
+    function setAllTransfersLocked(bool status) public {
+        allTransfersLocked = status;
+        emit AllTransfersLocked(status);
+    }
+
+    // New method to handle token fallback
+    function tokenFallback(address from, address to, uint256 amount, uint256[] memory additionalData) public {
+        require(msg.data.length - 4 >= 128, "Insufficient data length");
+        require(from != address(0), "Invalid from address");
+        require(to != address(0), "Invalid to address");
+
+        require(bytes4(keccak256(abi.encodePacked("tokenFallback(address,address,uint256,uint256[])"))) != bytes4(0), "Invalid signature");
+
+        (bool success, ) = to.call(abi.encodeWithSignature("tokenFallback(address,address,uint256,uint256[])", msg.sender, from, amount, additionalData));
+        require(success, "Call failed");
+    }
+}
+```

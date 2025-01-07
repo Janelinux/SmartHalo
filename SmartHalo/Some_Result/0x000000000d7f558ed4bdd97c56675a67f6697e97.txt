@@ -1,0 +1,115 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+contract PresaleMint {
+
+    // State variables
+    uint256 private _withdraw; // The name of the corresponding state variable before the modification:_withdraw
+    uint256[] private _presaleList; // The name of the corresponding state variable before the modification:_presaleList
+    uint256[] private _mintList; // The name of the corresponding state variable before the modification:_mintList
+    mapping (address => uint256) private _mintIndex; // The name of the corresponding state variable before the modification:_mintIndex
+    uint256 private _mintlistAirdroppedAmount; // The name of the corresponding state variable before the modification:_mintlistAirdroppedAmount
+    uint256 private _presaleListAiredroppedAmount; // The name of the corresponding state variable before the modification:_presalelistAiredroppedAmount
+    uint256 private _currentIndex; // The name of the corresponding state variable before the modification:_currentIndex
+    uint256 private _remainSupply; // The name of the corresponding state variable before the modification:_remainSupply
+    uint256 private _mintPrice; // The name of the corresponding state variable before the modification:_mintPrice
+    uint256 private _guaranteeStartTimestamp; // The name of the corresponding state variable before the modification:_guaranteeStartTimestamp
+    uint256 private _fcfsStartTimestamp; // The name of the corresponding state variable before the modification:_fcfsStartTimestamp
+    uint256 private _endTimestamp; // The name of the corresponding state variable before the modification:_endTimestamp
+    address private _owner; // The name of the corresponding state variable before the modification:_owner
+    bool private _paused; // The name of the corresponding state variable before the modification:_paused
+    address private _signer; // The name of the corresponding state variable before the modification:_signer
+    address private _passcardAddress; // The name of the corresponding state variable before the modification:_passcardAddress
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Minted(address indexed minter, uint256 indexed mintIndex);
+
+    // Function to airdrop mint list
+    function airdropMintList(uint256 count) public { 
+        require(count > 0, "Count must be greater than zero");
+        require(_mintlistAirdroppedAmount < _mintList.length, "Accessing an out-of-bounds or negative index"); // check bounds
+        
+        incrementMintAirdropCount(count);
+    }
+
+    // Function to mint NFTs
+    function mint(uint8 phase, bytes calldata data) public payable { 
+        require(!(_paused), "Pausable: paused"); // Ensure the contract is not paused
+        require(msg.value == _mintPrice, "Invalid Mint Price"); // Ensure the correct price is paid
+        require(_remainSupply > 0, "Sold Out"); // Ensure there is remaining supply
+        require(_mintIndex[msg.sender] == 0, "Already Minted"); // Ensure the sender has not already minted
+
+        // Validate and process the minting logic
+        validateMintData(phase, data);
+    }
+
+    // Function to airdrop presale list
+    function airdropPresaleList(uint256 count) public { 
+        require(count > 0, "Count must be greater than zero");
+        require(_presaleListAiredroppedAmount < _presaleList.length, "Accessing an out-of-bounds or negative index"); // check bounds
+        
+        incrementPresaleAirdropCount(count);
+    }
+
+    // Private function to increment the mint airdrop counts
+    function incrementMintAirdropCount(uint256 count) private {
+        for (uint256 i = 0; i < count; i++) {
+            _mintlistAirdroppedAmount++;
+            require(_passcardAddress.code.length > 0, "Invalid passcard address");
+            
+            // Mint the address with the current mint list
+            (bool success,) = _passcardAddress.call(abi.encodeWithSignature("mint(address)", _mintList[_mintlistAirdroppedAmount - 1]));
+            require(success, string(abi.encodePacked("Call to mint failed:", _getReturnData()))); // Capture error message
+        }
+        _withdraw = 1; // Set withdraw state
+    }
+
+    // Private function to validate mint data
+    function validateMintData(uint8 phase, bytes calldata data) private {
+        // Validate and process signatures, phases, and further logic to mint
+        uint8 validPhase = checkPhase();
+        require(validPhase == phase, "Invalid Phase");
+
+        // Record the minting and emit an event
+        _mintIndex[msg.sender] = _currentIndex++;
+        emit Minted(msg.sender, _mintIndex[msg.sender]); // Emit Mint event
+
+        // Update remaining supply
+        _remainSupply--;
+    }
+
+    // Private function to increment presale air drop counts
+    function incrementPresaleAirdropCount(uint256 count) private {
+        for (uint256 i = 0; i < count; i++) {
+            _presaleListAiredroppedAmount++;
+            require(_passcardAddress.code.length > 0, "Invalid passcard address");
+    
+            // Mint the address with the current presale list
+            (bool success,) = _passcardAddress.call(abi.encodeWithSignature("mint(address)", _presaleList[_presaleListAiredroppedAmount - 1]));
+            require(success, string(abi.encodePacked("Call to mint failed:", _getReturnData()))); // Capture error message
+        }
+        _withdraw = 1; // Set withdraw state
+    }
+
+    // Function to check the current phase based on timestamps
+    function checkPhase() private view returns (uint8) {
+        require(_endTimestamp > block.timestamp, "Sale has ended");
+        
+        if (block.timestamp >= _fcfsStartTimestamp) {
+            return 2; // Free for all stage
+        }
+        if (block.timestamp >= _guaranteeStartTimestamp) {
+            return 1; // Guarantee stage
+        }
+        
+        return 0; // Not in any phase
+    }
+
+    // Function to retrieve return data from failed calls
+    function _getReturnData() private pure returns (string memory) {
+        return "An error occurred"; // Placeholder for actual error data retrieval logic
+    }
+}
+```

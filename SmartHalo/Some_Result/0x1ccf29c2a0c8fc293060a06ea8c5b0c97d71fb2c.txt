@@ -1,0 +1,80 @@
+Here is the fine-tuned Solidity code:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+interface IERC20 {
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+}
+
+// State variables
+uint256 private totalShares; // The name of the corresponding state variable before the modification:_totalShares
+uint256 private totalReleased; // The name of the corresponding state variable before the modification:_totalReleased
+mapping (address => uint256) private shares; // The name of the corresponding state variable before the modification:_shares
+mapping (address => uint256) private released; // The name of the corresponding state variable before the modification:_released
+address[] private payees; // The name of the corresponding state variable before the modification:_payee
+mapping (address => uint256) private totalReleasedByToken; // The name of the corresponding state variable before the modification:_totalReleased
+mapping (address => uint256) private releasedByToken; // The name of the corresponding state variable before the modification:_released
+
+// Events
+event PaymentReceived(address indexed sender, uint256 amount); 
+event PaymentReleased(address indexed to, uint256 amount);
+event ERC20PaymentReleased(address indexed token, address indexed to, uint256 amount);
+
+// Function to release payments in ERC20 tokens and return the amount released
+function releaseERC20Payment(address token, address payee) public returns (uint256) { // return type is uint256
+    require(msg.data.length >= 68, "Invalid data length"); // type of msg.data is bytes
+    require(shares[payee] > 0, "PaymentSplitter: account has no shares");
+    require(token.code.length > 0, "Token must be a contract");
+
+    uint256 tokenBalance = IERC20(token).balanceOf(address(this));
+    uint256 amountDue = safeAdd(totalReleasedByToken[token], computePayment(released[payee], tokenBalance, payee));
+    require(amountDue > 0, "PaymentSplitter: account is not due payment");
+
+    released[payee] += amountDue;
+    totalReleasedByToken[token] += amountDue;
+
+    // Transfer the tokens
+    require(IERC20(token).transfer(payee, amountDue), "SafeERC20: low-level call failed");
+    emit ERC20PaymentReleased(token, payee, amountDue);
+
+    return amountDue; // Returning the amount released
+}
+
+// Function to release payments in native tokens and returns the amount released
+function releaseNativePayment(address payee) public returns (uint256) { // return type is uint256
+    require(msg.data.length >= 32, "Invalid data length"); // type of msg.data is bytes
+    require(shares[payee] > 0, "PaymentSplitter: account has no shares");
+
+    uint256 totalReceived = address(this).balance + totalReleased;
+    uint256 amountDue = computePayment(released[payee], totalReceived, payee);
+    require(amountDue > 0, "PaymentSplitter: account is not due payment");
+
+    released[payee] += amountDue;
+    totalReleased += amountDue;
+
+    // Ensure sufficient balance
+    require(address(this).balance >= amountDue, "Address: insufficient balance");
+    
+    (bool success, ) = payee.call{value: amountDue}("");
+    require(success, "Address: unable to send value, recipient may have reverted");
+    emit PaymentReleased(payee, amountDue);
+
+    return amountDue; // Returning the amount released
+}
+
+// Internal function to safely add two uint256 values
+function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+    require(a <= type(uint256).max - b, "Panic: addition overflow");
+    return a + b;
+}
+
+// Compute how much a payee is owed based on their share
+function computePayment(uint256 alreadyReleased, uint256 totalReceived, address payee) private view returns (uint256) {
+    require(totalShares > 0, "Panic: total shares cannot be zero");
+    uint256 calculatedPayment = (totalReceived * shares[payee]) / totalShares;
+    return calculatedPayment - alreadyReleased;
+}
+```

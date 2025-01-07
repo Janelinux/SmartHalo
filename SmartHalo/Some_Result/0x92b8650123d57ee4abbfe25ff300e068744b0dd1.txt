@@ -1,0 +1,21 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract FallbackImplementation {
+
+    // State variable holding the address of the fallback implementation
+    uint256 fallbackImplementation; // The name of the corresponding state variable before the modification: _fallback 
+
+    /**
+     * @notice Returns the address of the current fallback implementation.
+     * @dev This function is called to retrieve the address that the contract will fallback to for calls that do not match any function.
+     * @return The address of the fallback implementation.
+     */
+    function getImplementationAddress() public view returns (uint256) { 
+        // The 'view' modifier indicates that this function does not modify the state, 
+        // allowing it to be called without incurring gas costs in a non-transaction context.
+        
+        return fallbackImplementation; // Returns the current fallback implementation address
+    }
+}
+```

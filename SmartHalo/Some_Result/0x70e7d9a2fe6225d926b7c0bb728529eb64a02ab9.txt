@@ -1,0 +1,55 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract AccessControl {
+    // State variables
+    mapping (address => uint256[]) private accessMap; // The name of the corresponding state variable before the modification: map_2
+    address private owner; // The name of the corresponding state variable before the modification: _owner
+    bool private isOwnershipAccepted; // The name of the corresponding state variable before the modification: _acceptOwnership
+    bool private isAccessCheckEnabled; // The name of the corresponding state variable before the modification: _checkEnabled
+
+    // Events
+    event CheckAccessDisabled();
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event CheckAccessEnabled();
+    event RemovedAccess(address indexed account);
+    event AddedAccess(address indexed account);
+    event OwnershipTransferRequested(address indexed previousOwner, address indexed newOwner);
+
+    // Internal function to check if the address has access
+    function _checkAccess(uint256 varg0, uint256 varg1) private view returns (bool) {
+        address addr = address(uint160(varg1));
+        // Check if the address has access in the mapping
+        if (accessMap[addr].length > 0 && accessMap[addr][0] != 0) {
+            return accessMap[addr][0] == 0xff; // Return true if the access flag is set
+        } else {
+            return !isAccessCheckEnabled; // Return the inverted value of access check flag if no access found
+        }
+    }
+
+    // Public function to verify access to a specific address
+    function hasAccess(address checkAddress, uint256 varg1Length) public view returns (bool) {
+        require(msg.data.length >= 68, "Insufficient data length"); // Ensure sufficient data is available
+        require(varg1Length <= 0x100000000, "Invalid argument length"); // Ensure length is within valid range
+        
+        // Require that sufficient calldata is present for processing
+        require(varg1Length + 36 <= msg.data.length, "Invalid calldata length");
+
+        // Copy calldata into a bytes array
+        bytes memory dataSegment = new bytes(varg1Length);
+        assembly {
+            calldatacopy(add(dataSegment, 0x20), 36, varg1Length) // Copy calldata to the dataSegment
+        }
+        
+        // Call internal function to check access
+        bool hasAccessFlag = _checkAccess(uint256(uint160(checkAddress)), uint256(uint160(dataSegment[0]))); 
+        if (!hasAccessFlag) {
+            // If access not granted, check if the transaction origin matches the target address
+            hasAccessFlag = (tx.origin == checkAddress); // tx.origin is of type address and checkAddress is of type address
+        }
+        
+        return hasAccessFlag; // Return the access verification result
+    }
+}
+```

@@ -1,0 +1,134 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+// Data structures and variables
+mapping (uint256 => uint256[]) private reflectionsMap; // STORAGE[0x2] //The name of the corresponding state variable before the modification:map_2
+mapping (uint256 => uint256[]) private allowance; // STORAGE[0x4] //The name of the corresponding state variable before the modification:_allowance
+mapping (uint256 => uint256[]) private owners; // STORAGE[0x5] //The name of the corresponding state variable before the modification:owner_5
+uint256 private totalReflections; // STORAGE[0x6] //The name of the corresponding state variable before the modification:stor_6
+uint256 private accumulatedFee; // STORAGE[0x7] //The name of the corresponding state variable before the modification:stor_7
+uint256 private currentContractBalance; // STORAGE[0x8] //The name of the corresponding state variable before the modification:stor_8
+uint256 private previousContractBalance; // STORAGE[0x9] //The name of the corresponding state variable before the modification:stor_9
+mapping (uint256 => uint256[]) private ownerTimelock; // STORAGE[0xa] //The name of the corresponding state variable before the modification:owner_a
+mapping (uint256 => uint256[]) private recentSwaps; // STORAGE[0xb] //The name of the corresponding state variable before the modification:map_b
+uint256 private swapCooldown; // STORAGE[0xf] //The name of the corresponding state variable before the modification:stor_f
+uint256 private contractOwner; // STORAGE[0x0] //The name of the corresponding state variable before the modification:_owner
+uint256 private manualSwap; // STORAGE[0xc] //The name of the corresponding state variable before the modification:_manualswap
+uint256 private primaryOwner; // STORAGE[0xd] //The name of the corresponding state variable before the modification:owner_d_0_19
+uint256 private secondaryOwner; // STORAGE[0xe] //The name of the corresponding state variable before the modification:owner_e_0_19
+uint256 private withdrawalFlag; // STORAGE[0xe] //The name of the corresponding state variable before the modification:stor_e_20_20
+uint256 private swapEnabledFlag; // STORAGE[0xe] //The name of the corresponding state variable before the modification:stor_e_21_21
+uint256 private swapReentrancyFlag; // STORAGE[0xe] //The name of the corresponding state variable before the modification:stor_e_22_22
+uint256 private transferFromEnabledFlag; // STORAGE[0xe] //The name of the corresponding state variable before the modification:stor_e_23_23
+
+// Events
+event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+event MaxTxAmountUpdated(uint256 newMaxTxAmount);
+event Approval(address indexed owner, address indexed spender, uint256 value);
+event Transfer(address indexed from, address indexed to, uint256 value);
+
+contract FineTuned {
+    function performTransfer(uint256 amount, address destination) private { 
+        require(msg.sender != address(0), "ERC20: transfer from the zero address");
+        require(destination != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+
+        bool isNotOwner = msg.sender != contractOwner;
+        if (isNotOwner) {
+            isNotOwner = destination != contractOwner;
+        }
+
+        // Additional checks if not the owner
+        if (isNotOwner) {
+            if (swapReentrancyFlag != 0) {
+                bool isNotContract = msg.sender != address(this);
+                if (isNotContract) {
+                    isNotContract = destination != address(this);
+                }
+                if (isNotContract) {
+                    isNotContract = msg.sender != primaryOwner;
+                }
+                if (isNotContract) {
+                    isNotContract = destination != primaryOwner;
+                }
+                if (isNotContract) {
+                    bool isSenderPrimary = msg.sender == primaryOwner;
+                    bool isSenderSecondary = msg.sender == secondaryOwner;
+
+                    require(isSenderPrimary || isSenderSecondary, "ERR: Only owner can swap");
+                }
+            }
+            require(amount <= swapCooldown, "Transfer amount exceeds cooldown limit");
+
+            address senderAddress = msg.sender;
+            bool isSenderWhitelisted = !(0xff & ownerTimelock[senderAddress][0]);
+            require(isSenderWhitelisted, "Sender is not whitelisted");
+
+            bool isDestinationWhitelisted = !(0xff & ownerTimelock[destination][0]);
+            require(isDestinationWhitelisted, "Destination is not whitelisted");
+
+            bool isSenderSecondaryOwner = senderAddress == secondaryOwner;
+            if (isSenderSecondaryOwner) {
+                require(destination != primaryOwner, "Transfer to primary owner not allowed");
+            }
+
+            bool isDestinationNotRestricted = !(0xff & owners[destination][0]);
+            require(isDestinationNotRestricted, "Destination is restricted");
+
+            require(swapReentrancyFlag != 0, "Reentrancy not allowed");
+            require(recentSwaps[destination][0] < block.timestamp, "Recent swap timeout");
+
+            uint256 newSwapTime = block.timestamp + 60;
+            recentSwaps[destination][0] = newSwapTime;
+        }
+
+        uint256 senderAllowance = (0xff & owners[msg.sender][0]);
+        if (senderAllowance == 0) {
+            uint256 destinationAllowance = (0xff & owners[destination][0]);
+        }
+
+        // Reset balances if needed
+        bool resetBalances = (currentContractBalance == 0) && (previousContractBalance == 0);
+        if (!resetBalances) {
+            currentContractBalance = 0;
+            previousContractBalance = 0;
+        }
+        
+        performPostTransfer(); // Function that does further processing
+        uint256 reflectionAmount = calculateReflections(0, reflectionsMap[uint256(uint160(msg.sender))]);
+        reflectionsMap[uint256(uint160(msg.sender))] = reflectionAmount;
+        
+        uint256 updatedReflections = computeReflections(0, reflectionsMap[uint256(uint160(msg.sender))]);
+        reflectionsMap[uint256(uint160(msg.sender))] = updatedReflections;
+
+        uint256 balanceAmount = calculateLiquidity(0);
+        reflectionsMap[uint256(uint160(address(this)))] = balanceAmount;
+
+        // Update global states
+        totalReflections = calculateReflections(0, totalReflections);
+        accumulatedFee = computeReflections(0, accumulatedFee);
+
+        emit Transfer(msg.sender, destination, amount);
+    }
+
+    function performPostTransfer() private {
+        // Additional logic for handling transfer completion
+    }
+
+    function calculateReflections(uint256 value, uint256[] memory data) private pure returns (uint256) {
+        // Internal computations for reflection logic
+        return value;
+    }
+
+    function calculateLiquidity(uint256 varg0) private pure returns (uint256) {
+        // Logic to calculate liquidity or some other metrics
+        return varg0;
+    }
+
+    function computeReflections(uint256 value, uint256[] memory data) private pure returns (uint256) {
+        // Internal computations for reflection logic
+        return value;
+    }
+}
+```

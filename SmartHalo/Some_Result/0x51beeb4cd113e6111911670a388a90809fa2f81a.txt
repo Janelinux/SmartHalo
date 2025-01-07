@@ -1,0 +1,95 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract TokenContract {
+    // State Variables
+    uint256[] public tokenNames; // STORAGE[0x0]
+    uint256[] public tokenSymbols; // STORAGE[0x1]
+    mapping(address => uint256) public balanceOf; // STORAGE[0x3]
+    mapping(address => uint256) public allowance; // STORAGE[0x4]
+    mapping(address => uint256) public ownerFlags; // STORAGE[0x5]
+    uint256 public burnPercentage; // STORAGE[0x7]
+    uint256 public totalSupply; // STORAGE[0x8]
+    uint256 public storageValue; // STORAGE[0x9]
+    uint256 public decimals; // STORAGE[0x2]
+
+    // Events
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // Safe multiplication function that ensures no overflow occurs
+    function safeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        if (b == 0) {
+            return 0;
+        }
+        uint256 product = a * b;
+        require(product / b == a, "SafeMul: multiplication overflow");
+        return product;
+    }
+
+    // Safe division function that ensures no division by zero
+    function safeDiv(uint256 dividend, uint256 divisor) private pure returns (uint256) {
+        require(divisor > 0, "SafeDiv: division by zero");
+        return dividend / divisor;
+    }
+
+    // Calculates a value based on an adjustment to the provided inputs
+    function calculateValue(uint256 input1, uint256 input2) private view returns (uint256) {
+        uint256 totalValue = input1 + input2;
+        require(totalValue >= input2, "calculateValue: totalValue underflow");
+        require(totalValue >= 1, "calculateValue: totalValue must be at least 1");
+        uint256 adjustedValue = safeDiv(input1, totalValue - 1);
+        return safeMul(input1, adjustedValue);
+    }
+
+    // Another calculation function to determine a value based on input and burn percentage
+    function calculateAdjustedValue(uint256 input1, uint256 input2) private view returns (uint256) {
+        uint256 tempValue = calculateValue(100, input1);
+        uint256 multipliedValue = safeMul(input2, tempValue);
+        return safeDiv(100, multipliedValue);
+    }
+
+    // Allows a user to transfer tokens from one address to another, with approval
+    function transferFrom(address from, address to, uint256 value) public payable {
+        require(msg.data.length - 4 >= 96, "transferFrom: invalid data length");
+        require(value <= balanceOf[from], "transferFrom: insufficient balance");
+        require(value <= allowance[from], "transferFrom: allowance exceeded");
+        require(to != address(0), "transferFrom: transfer to the zero address");
+
+        if (!(0xff & ownerFlags[from] != 0)) {
+            bool isAmountExceedingCap = value <= storageValue;
+            if (value > storageValue) {
+                isAmountExceedingCap = 0xff & ownerFlags[to] != 0;
+            }
+            require(isAmountExceedingCap, "transferFrom: amount exceeds tx cap");
+
+            // Reduce the balance
+            require(value <= balanceOf[from], "transferFrom: insufficient balance post cap check");
+            balanceOf[from] -= value;
+
+            // Calculate and process burn amount
+            uint256 burnAmount = calculateAdjustedValue(value, burnPercentage);
+            require(burnAmount <= value, "transferFrom: burn amount exceeds value");
+            require(value - burnAmount + balanceOf[to] >= balanceOf[to], "transferFrom: balance overflow");
+
+            balanceOf[to] += value - burnAmount;
+            require(burnAmount <= totalSupply, "transferFrom: burn amount exceeds total supply");
+            totalSupply -= burnAmount;
+
+            require(value <= allowance[from], "transferFrom: allowance exceeded after burn");
+            allowance[from] -= value;
+
+            emit Transfer(from, to, value - burnAmount);
+            emit Transfer(from, address(0), burnAmount); // Burned tokens are sent to address(0)
+        } else {
+            // If the transfer is not exceeding cap
+            require(value <= balanceOf[from], "transferFrom: insufficient balance for non-cap transfer");
+            balanceOf[from] -= value;
+            require(value + balanceOf[to] >= balanceOf[to], "transferFrom: balance overflow");
+
+            balanceOf[to] += value;
+            emit Transfer(from, to, value);
+        }
+    }
+}
+```

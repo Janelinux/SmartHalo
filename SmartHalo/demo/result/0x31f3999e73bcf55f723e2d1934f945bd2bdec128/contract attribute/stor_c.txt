@@ -1,0 +1,45 @@
+Based on the additional notes regarding the usage of state variables within the contract functions, we can update the annotations to define the contract attributes more accurately. Here is the revised code with annotations reflecting the contextual usage of the state variables:
+
+```solidity
+mapping (uint256 => uint256) _balanceOf; // STORAGE[0x1] // Contract Attribute: asset
+mapping (uint256 => mapping (uint256 => uint256)) _allowance; // STORAGE[0x2] // Contract Attribute: others
+mapping (uint256 => uint256) _excludedFromMaxWallet_; // STORAGE[0x3] // Contract Attribute: limit
+mapping (uint256 => uint256) _ethLiqudityPair; // STORAGE[0x4] // Contract Attribute: router
+mapping (uint256 => uint256) _excludedFromTx_; // STORAGE[0x5] // Contract Attribute: flag
+mapping (uint256 => uint256) _excludedFromTax_; // STORAGE[0x6] // Contract Attribute: flag
+uint256[] array_8; // STORAGE[0x8] // Contract Attribute: others
+uint256[] array_9; // STORAGE[0x9] // Contract Attribute: others
+uint256 __tTotal; // STORAGE[0xb] // Contract Attribute: asset
+uint256 stor_c; // STORAGE[0xc] // Contract Attribute: others
+uint256 stor_d; // STORAGE[0xd] // Contract Attribute: others
+uint256 _buyFEE; // STORAGE[0xe] // Contract Attribute: fees
+uint256 _sellFEE; // STORAGE[0xf] // Contract Attribute: fees
+uint256 stor_10; // STORAGE[0x10] // Contract Attribute: others
+uint256 stor_11; // STORAGE[0x11] // Contract Attribute: others
+uint256 stor_12; // STORAGE[0x12] // Contract Attribute: others
+uint256 __maxWalletToken; // STORAGE[0x13] // Contract Attribute: limit
+uint256 __maxTxAmount; // STORAGE[0x15] // Contract Attribute: limit
+uint256 _owner; // STORAGE[0x0] bytes 0 to 19 // Contract Attribute: address
+uint256 _decimals; // STORAGE[0xa] bytes 0 to 0 // Contract Attribute: others
+uint256 __TEAM_MARKETING_; // STORAGE[0x7] bytes 0 to 19 // Contract Attribute: address
+uint256 _uniswapV2Router; // STORAGE[0x17] bytes 0 to 19 // Contract Attribute: router
+uint256 _uniswapV2Pair; // STORAGE[0x19] bytes 0 to 19 // Contract Attribute: router
+uint256 _inSwapAndLiquify; // STORAGE[0x19] bytes 20 to 20 // Contract Attribute: flag
+uint256 _swapAndLiquifyEnabled; // STORAGE[0x19] bytes 21 to 21 // Contract Attribute: flag
+uint256 stor_19_22_22; // STORAGE[0x19] bytes 22 to 22 // Contract Attribute: others
+// Events
+OwnershipTransferred(address, address);
+Approval(address, address, uint256);
+Transfer(address, address, uint256);
+```
+
+### Clarifications on the Attributes
+- **asset**: This refers to the balance and total supply related state variables.
+- **others**: These are variables that do not fit strictly into the provided categories and are used for various purposes.
+- **limit**: Variables that impose restrictions on transactions and wallet limits.
+- **fees**: This represents variables for transaction costs like buy and sell fees.
+- **flag**: These variables indicate specific states or conditions, such as exclusions from taxes or transaction limits.
+- **address**: This includes variables that store addresses relevant to ownership, marketing, etc.
+- **router**: Variables that relate to liquidity pairings and routing mechanisms for exchanges.
+
+The re-evaluation of these attributes provides a clearer understanding of the purpose of each state variable in the smart contract.

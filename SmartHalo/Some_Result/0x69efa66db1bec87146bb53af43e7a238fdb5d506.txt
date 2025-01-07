@@ -1,0 +1,38 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+
+    // Storage variables
+    uint256 private contractInitialized; //The name of the corresponding state variable before the modification: _initialize
+    uint256 private initializedFlag; //The name of the corresponding state variable before the modification: stor_0_0_0
+    address private owner; //The name of the corresponding state variable before the modification: _owner
+    address private rocketWethOracle; //The name of the corresponding state variable before the modification: _rocketWethOracle
+    address private usdcWethOracle; //The name of the corresponding state variable before the modification: _usdcWethOracle
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner); // Improved event definition
+
+    // Function to initialize the contract
+    function initialize(address _rocketOracleAddress, address _usdcOracleAddress) public payable {
+        // Ensure there are enough bytes in the message data for the function call
+        require(msg.data.length - 4 >= 64, "Insufficient data passed to the function.");
+
+        // Check for the contract's initialization state
+        require(contractInitialized == 0, "Contract instance has already been initialized.");
+
+        // Update initialization flags
+        contractInitialized = 1; // Mark the contract as initialized
+        initializedFlag = 1; // Set the initialization flag
+
+        // Set owner as the sender of the transaction
+        owner = msg.sender; // Set the owner of the contract
+        emit OwnershipTransferred(address(0), msg.sender); // Emit the ownership transfer event
+
+        // Assign values to the oracle addresses
+        rocketWethOracle = _rocketOracleAddress; // Set the address for the rocket WETH oracle
+        usdcWethOracle = _usdcOracleAddress; // Set the address for the USDC WETH oracle
+    }
+}
+```

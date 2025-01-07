@@ -1,0 +1,13 @@
+```solidity
+pragma solidity ^0.8.0;
+
+contract ExampleContract {
+    // Define a state variable to hold the address of the fallback implementation
+    uint256 fallbackImplementationAddress; // The name of the corresponding state variable before the modification: _fallback
+
+    // Function to retrieve the implementation address
+    function getImplementationAddress() public view returns (uint256) { 
+        return fallbackImplementationAddress; // Return the address of the fallback implementation
+    }
+}
+```

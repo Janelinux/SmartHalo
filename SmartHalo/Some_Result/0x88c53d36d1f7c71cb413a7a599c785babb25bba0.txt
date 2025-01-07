@@ -1,0 +1,75 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedDecompiled {
+
+    // Data structures and variable declarations
+    mapping (address => uint256[]) ownerTokens; // STORAGE[0x3] // The name of the corresponding state variable before the modification: owner_3
+    mapping (address => uint256) balances; // STORAGE[0x4] // The name of the corresponding state variable before the modification: _balanceOf
+    mapping (address => mapping (address => uint256)) allowances; // STORAGE[0x5] // The name of the corresponding state variable before the modification: _increaseAllowance
+    uint256 totalSupply; // STORAGE[0x6] // The name of the corresponding state variable before the modification: _totalSupply
+    string name; // STORAGE[0x7] // The name of the corresponding state variable before the modification: _name
+    string symbol; // STORAGE[0x8] // The name of the corresponding state variable before the modification: _symbol
+    address renounceOwnershipAddress; // STORAGE[0x0] // The name of the corresponding state variable before the modification: _renounceOwnership
+    bool stor9Variable; // STORAGE[0x9] // The name of the corresponding state variable before the modification: stor_9_0_0
+    uint256 anotherStorageVar; // STORAGE[0x1] // The name of the corresponding state variable before the modification: stor_1_0_19
+    address ownerAddress; // STORAGE[0x2] // The name of the corresponding state variable before the modification: _owner
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    // Safe mathematical operations
+    function safeAdd(uint256 value1, uint256 value2) private pure returns (uint256) { 
+        uint256 result = value1 + value2;
+        require(result >= value1, "SafeMath: addition overflow");
+        return result;
+    }
+
+    function safeSub(uint256 value1, uint256 value2) private pure returns (uint256) { 
+        require(value1 >= value2, "SafeMath: subtraction overflow");
+        return value1 - value2;
+    }
+
+    // Transfer function
+    function transfer(address recipient, uint256 amount) public payable returns (bool) { 
+        require(msg.data.length >= 68, "Invalid data length"); // Ensure proper data size
+        require(msg.sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        bool isOwner = (msg.sender == renounceOwnershipAddress);
+        
+        // Check the conditions based on ownership status
+        if (!isOwner) {
+            isOwner = (msg.sender == renounceOwnershipAddress && stor9Variable == true);
+        }
+
+        // Proceed with transfer logic
+        if (isOwner || ownerTokens[msg.sender].length > 0) {
+            if (allowances[msg.sender][recipient] > 0) {
+                // Make sure the balance is sufficient 
+                require(balances[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
+                
+                // Proper use of safe math
+                balances[msg.sender] = safeSub(balances[msg.sender], amount);
+                balances[recipient] = safeAdd(balances[recipient], amount);
+                emit Transfer(msg.sender, recipient, amount);
+            } else {
+                // The total supply should be consistent with the variable v8, making sure it's uint256
+                totalSupply = safeAdd(amount, totalSupply);
+                balances[recipient] = safeAdd(balances[recipient], amount);
+                emit Transfer(address(0), recipient, amount); // Minting logic
+            }
+        } else {
+            require(balances[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
+            balances[msg.sender] = safeSub(balances[msg.sender], amount);
+            balances[recipient] = safeAdd(balances[recipient], amount);
+            emit Transfer(msg.sender, recipient, amount);
+            stor9Variable = false; // Follow the type agreement
+        }
+        return true;
+    }
+}
+```

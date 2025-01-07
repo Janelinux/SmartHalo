@@ -1,0 +1,89 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    // State variables
+    uint256 public totalSupply; // Total supply of tokens //The name of the corresponding state variable before the modification:_totalSupply
+    string[] public names; // Array of names //The name of the corresponding state variable before the modification:_name
+    string[] public symbols; // Array of symbols //The name of the corresponding state variable before the modification:_symbol
+    mapping(uint256 => uint256) public tokenData; // Mapping for token data //The name of the corresponding state variable before the modification:map_4
+    mapping(uint256 => uint256) public balanceOf; // Mapping for user balances //The name of the corresponding state variable before the modification:_balanceOf
+    mapping(uint256 => uint256) public getApproved; // Mapping for approved addresses //The name of the corresponding state variable before the modification:_getApproved
+    mapping(uint256 => mapping(address => bool)) public isApprovedForAll; // Mapping for approvals for all //The name of the corresponding state variable before the modification:_isApprovedForAll
+    uint256 public totalShares; // Total shares //The name of the corresponding state variable before the modification:_totalShares
+    uint256 public totalReleased; // Total released funds //The name of the corresponding state variable before the modification:_totalReleased
+    mapping(uint256 => uint256) public shares; // Mapping for shares of token //The name of the corresponding state variable before the modification:_shares
+    mapping(uint256 => uint256) public released; // Mapping for released amount //The name of the corresponding state variable before the modification:_released
+    address[] public payees; // Array of payees //The name of the corresponding state variable before the modification:_payee
+    mapping(uint256 => uint256) public totalReleasedFor; // Mapping for total released amount per user //The name of the corresponding state variable before the modification:_totalReleased
+    mapping(uint256 => uint256) public releasedFor; // Mapping for amount released per user //The name of the corresponding state variable before the modification:_released
+    uint256 public whitelistPrice; // Price for whitelist //The name of the corresponding state variable before the modification:_whitelistPrice
+    uint256 private unexpectedVar1; // Placeholder variable //The name of the corresponding state variable before the modification:stor_12
+    uint256 private unexpectedVar2; // Placeholder variable //The name of the corresponding state variable before the modification:stor_13
+    mapping(address => uint256) public ownersRewards; // Mapping for owner rewards //The name of the corresponding state variable before the modification:owner_15
+    mapping(uint256 => uint256) public otherDataMapping; // Mapping for other data //The name of the corresponding state variable before the modification:map_16
+    mapping(address => uint256) public additionalOwners; // Mapping for additional owners //The name of the corresponding state variable before the modification:owner_17
+    bytes32 public whitelistMerkleRoot; // Merkle root for whitelist //The name of the corresponding state variable before the modification:_setwhitelistMerkleRoot
+    string[] public baseURISet; // Base URI set array //The name of the corresponding state variable before the modification:_setBaseURI
+    bool public revealed; // State indicating if tokens are revealed //The name of the corresponding state variable before the modification:_revealed
+    bool public isWhitelistActive; // State indicating if whitelist is active //The name of the corresponding state variable before the modification:_isWhitelistActive
+    bool public isPublicActive; // State indicating if public minting is active //The name of the corresponding state variable before the modification:_isPublicActive
+    bool public withdrawRewards; // State indicating if rewards are withdrawable //The name of the corresponding state variable before the modification:_withdrawRewards
+    address public owner; // Current owner address //The name of the corresponding state variable before the modification:_owner
+    uint256 private additionalData; // Placeholder for extra data //The name of the corresponding state variable before the modification:stor_10_20_20
+    uint256 private additionalControl1; // Unused control variable 1 //The name of the corresponding state variable before the modification:stor_10_21_21
+    uint256 public maxWhitelistMintPerWallet; // Max mints allowed per wallet //The name of the corresponding state variable before the modification:_maxWhitelistMintPerWallet
+    uint256 private additionalControl2; // Unused control variable 2 //The name of the corresponding state variable before the modification:stor_10_23_23
+
+    // Events
+    event PaymentReceived(address indexed from, uint256 amount);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event PaymentReleased(address indexed to, uint256 amount);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event ERC20PaymentReleased(address indexed from, address indexed to, uint256 amount);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Functions
+    function validateAndReturn(uint256 arg) private returns (uint256) {
+        uint256 tempValue = arg >> 1;
+        uint256 isOdd = arg & 0x1;
+        if (!isOdd) {
+            tempValue = arg & 0x7f;
+        }
+        require(isOdd - (tempValue < 32) == 0, "Panic: Invalid argument");
+        return tempValue;
+    }
+
+    function tokenURI(uint256 tokenId) public view returns (string memory) {
+        require(4 + (msg.data.length - 4) - 4 >= 32, "Input data error");
+        validateTokenId(tokenId);
+        require(isTokenExist(tokenId), "Error: Nonexistent tokenId");
+
+        // Handle revealing of the token
+        if (revealed) {
+            // Construct the URI for the token
+            bytes memory tokenData = createTokenData(tokenId);
+            return string(abi.encodePacked(tokenData, ".json")); // Ensure correct type usage
+        } else {
+            return "Token not revealed"; // Could return some default value
+        }
+    }
+
+    function isTokenExist(uint256 tokenId) private view returns (bool) {
+        return tokenId >= 1 && tokenId < totalSupply;
+    }
+
+    function validateTokenId(uint256 tokenId) private {
+        // Placeholder function for token validation logic
+        require(tokenId == tokenId, "Self-comparison failed");
+    }
+
+    // Helper function to create token data
+    function createTokenData(uint256 tokenId) private view returns (bytes memory) {
+        // Logic to create token data, this would involve fetching/formatting required information
+        return bytes(""); // Placeholder return, should return actual data in production
+    }
+}
+```

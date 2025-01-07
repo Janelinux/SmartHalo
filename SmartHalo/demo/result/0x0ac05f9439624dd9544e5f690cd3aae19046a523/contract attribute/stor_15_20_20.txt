@@ -1,0 +1,39 @@
+Based on the additional context provided regarding the usage of state variables in various functions, we can update the annotations for the state variables to better reflect their specific roles in the contract. Here's the revised annotation of the state variables:
+
+```solidity
+mapping (uint256 => uint256) owner_2; // STORAGE[0x2] // Contract Attribute: others
+mapping (uint256 => mapping (uint256 => uint256)) _allowance; // STORAGE[0x4] // Contract Attribute: fees
+mapping (uint256 => uint256) owner_5; // STORAGE[0x5] // Contract Attribute: fees // Used for excluding accounts from fees
+uint256 stor_6; // STORAGE[0x6] // Contract Attribute: limit // Limiting value checked in various functions
+uint256 stor_7; // STORAGE[0x7] // Contract Attribute: others
+uint256 stor_8; // STORAGE[0x8] // Contract Attribute: others // Written in function 0xe9804266
+uint256 stor_9; // STORAGE[0x9] // Contract Attribute: others // Written in function 0xe9804266
+uint256 stor_a; // STORAGE[0xa] // Contract Attribute: others // Written in function 0xe9804266
+uint256 stor_b; // STORAGE[0xb] // Contract Attribute: others // Written in function 0xe9804266
+uint256 stor_c; // STORAGE[0xc] // Contract Attribute: others
+uint256 stor_d; // STORAGE[0xd] // Contract Attribute: others
+uint256 stor_e; // STORAGE[0xe] // Contract Attribute: others
+uint256 stor_f; // STORAGE[0xf] // Contract Attribute: others
+mapping (uint256 => uint256) _bots; // STORAGE[0x10] // Contract Attribute: flag // Reflects bot accounts
+mapping (uint256 => uint256) __buyMap; // STORAGE[0x11] // Contract Attribute: others
+uint256 __maxTxAmount; // STORAGE[0x16] // Contract Attribute: limit // Maximum transaction amount variable
+uint256 __maxWalletSize; // STORAGE[0x17] // Contract Attribute: limit // Maximum wallet size variable
+uint256 __swapTokensAtAmount; // STORAGE[0x18] // Contract Attribute: others // Token swap threshold variable
+uint256 _owner; // STORAGE[0x0] bytes 0 to 19 // Contract Attribute: address // Owner of the contract
+uint256 _manualswap; // STORAGE[0x12] bytes 0 to 19 // Contract Attribute: flag // Manual swap flag
+uint256 owner_13_0_19; // STORAGE[0x13] bytes 0 to 19 // Contract Attribute: others
+uint256 _uniswapV2Router; // STORAGE[0x14] bytes 0 to 19 // Contract Attribute: router // Router address
+uint256 _uniswapV2Pair; // STORAGE[0x15] bytes 0 to 19 // Contract Attribute: router // Pair address
+uint256 stor_15_20_20; // STORAGE[0x15] bytes 20 to 20 // Contract Attribute: others
+uint256 stor_15_21_21; // STORAGE[0x15] bytes 21 to 21 // Contract Attribute: others
+uint256 stor_15_22_22; // STORAGE[0x15] bytes 22 to 22 // Contract Attribute: others
+```
+
+### Changes Made:
+1. **owner_5** is annotated as `fees` because it's being set in the context of fees related to the function `excludeMultipleAccountsFromFees`.
+2. **stor_6** is marked as `limit`, since it's being compared to other values indicating a limit.
+3. **stor_8**, **stor_9**, **stor_a**, and **stor_b** are marked as `others`, as they are being written to without additional context in provided usages.
+4. Variable **__maxTxAmount** and **__maxWalletSize** are retained as `limit`, reflecting their role in imposing transaction and wallet limits.
+5. All the variables used to read from or write to are preserved with their comments to provide clarity on their roles within the contract. 
+
+This captures the specific usage context of each variable according to the provided function behaviors.

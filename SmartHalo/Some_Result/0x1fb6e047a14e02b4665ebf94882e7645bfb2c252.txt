@@ -1,0 +1,129 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract FineTunedContract {
+    // Storage variables
+    uint256 public maxLpReward; //The name of the corresponding state variable before the modification: _lpRewardMaxAmount
+    uint256 public usedLpReward; //The name of the corresponding state variable before the modification: _lpRewardUsed
+    mapping (uint256 => uint256) public tokenAmounts; //The name of the corresponding state variable before the modification: _lpTokenAmounts
+    mapping (uint256 => uint256) public weightedRatios; //The name of the corresponding state variable before the modification: _weightedRatio
+    mapping (uint256 => uint256) public lastRatioUpdate; //The name of the corresponding state variable before the modification: _ratioUpdateLast
+    mapping (uint256 => uint256) public unclaimedAmounts; //The name of the corresponding state variable before the modification: _unclaimedAmounts
+    mapping (uint256 => uint256) public allowedPairs; //The name of the corresponding state variable before the modification: _allowedPairs
+    mapping (uint256 => uint256) public pairTokens; //The name of the corresponding state variable before the modification: _pairTokens
+    uint256 public claimBonusBatch; //The name of the corresponding state variable before the modification: _claimBonusBatch
+    address public ownerAddress; //The name of the corresponding state variable before the modification: _owner
+    address public newOwnerAddress; //The name of the corresponding state variable before the modification: _newOwner
+    address public nBUAddress; //The name of the corresponding state variable before the modification: _nBU
+    address public swapRouterAddress; //The name of the corresponding state variable before the modification: _swapRouter
+    address public swapFactoryAddress; //The name of the corresponding state variable before the modification: _swapFactory
+
+    // Events declaration
+    event RescueToken(address indexed token, address indexed to, uint256 amount);
+    event RecordAddLiquidity(uint256 tokenAmount, uint256 lpMinted, uint256 totalSupply, uint256 blockTimestamp);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Rescue(address indexed to, uint256 amount);
+    event ClaimLiquidityNbu(address indexed claimer, uint256 amount, uint256 blockTimestamp, uint256 claimedAt);
+    event RecordRemoveLiquidityGiveNbu(address indexed lpToken, address indexed removedBy, uint256 amountRemoved, uint256 bonus, uint256 updatedAt, uint256 transferredAt);
+    event RecordRemoveLiquidityUnclaimed(address indexed lpToken, address indexed removedBy, uint256 amountRemoved, uint256 blockTimestamp, uint256 claimedAt);
+
+    // Calculation function to determine the logarithm base 2 of a given number
+    function getLogBase2(uint256 value) private pure returns (uint256) { 
+        if (value <= 3) {
+            // Handling values 0, 1, 2, and 3
+            return (value == 0) ? 0 : 1;
+        } else {
+            // This code handles values greater than 3 by computing log base 2 through bitwise operations
+            require(value > 0, "Value must be positive");
+            uint256 result = value;
+            uint256 count = 0;
+            
+            while (result > 1) {
+                require(result > 0, "Panic due to underflow");
+                result >>= 1; // Divide by 2
+                count += 1;
+            }
+            return count;
+        }
+    }
+
+    // Function for calculating the reward based on block timestamp
+    function calculateReward() private view returns (uint256) { 
+        uint256 elapsedTime = block.timestamp - 0x6016f744; // Arbitrary timestamp baseline
+        uint256 rewardRate = getRewardRate(elapsedTime, maxLpReward);
+        require(rewardRate > 0, "Panic due to insufficient reward calculation");
+        
+        // Compute the remaining reward available for use
+        return (rewardRate <= usedLpReward) ? 0 : rewardRate - usedLpReward;
+    }
+
+    // Auxiliary function for reward calculations
+    function getRewardRate(uint256 timeElapsed, uint256 rewardRate) private pure returns (uint256) { 
+        // Apply reward calculation logic here
+        return rewardRate * timeElapsed;
+    }
+
+    // Function to handle token transfer logic
+    function transferTokenValues(uint256 tokenValue) private { 
+        uint256[] memory data = new uint256[](3);
+        data[0] = 2;
+        assembly {
+            calldatacopy(add(data, 32), 0, calldatasize())
+        }
+        require(data.length > 0, "Panic due to empty data length");
+        
+        // Further processing...
+        // Code to handle transfer and updating balances etc.
+    }
+
+    // Function to multiply with safety checks
+    function safeMultiply(uint256 valA, uint256 valB) private pure returns (uint256) { 
+        if (valA == 0 || valB == 0) return 0;
+        
+        require(valB <= (type(uint256).max / valA), "Panic due to overflow");
+        uint256 result = valA * valB;
+        return (result / valA == valB) ? result : 0; // Check for overflow
+    }
+
+    // Function to add integers with safety checks
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) { 
+        uint256 result = a + b;
+        require(result >= a, "Panic due to overflow");
+        return result;
+    }
+
+    // Function to subtract integers with safety checks
+    function safeSubtract(uint256 a, uint256 b) private pure returns (uint256) { 
+        require(a >= b, "Panic due to underflow");
+        return a - b;
+    }
+
+    // Function to record removing liquidity
+    function recordRemoveLiquidity(address pairToken, address tokenA, address tokenB, uint256 amount, uint256 liquidityAmount, uint256 additionalValue) public payable { 
+        require(msg.data.length >= 192, "Insufficient calldata length");
+        require(pairToken == pairToken, "Invalid pair token");
+        require(tokenA == tokenA, "Invalid token A");
+        require(tokenB == tokenB, "Invalid token B");
+        
+        require(claimBonusBatch == 1, "Liquidity is locked");
+        claimBonusBatch = 0; // Mark that the bonus is being claimed
+        
+        require(msg.sender == swapRouterAddress, "Caller is not allowed");
+        
+        // Check if swap factory is functioning
+        require(swapFactoryAddress.code.length > 0, "Swap factory unavailable");
+        (bool success, bytes memory result) = swapFactoryAddress.delegatecall(abi.encodeWithSignature("getPair(address,address)", tokenA, tokenB));
+        require(success, "Failed to retrieve pair address");
+        address pairAddress = abi.decode(result, (address));
+        require(pairAddress != address(0), "Pair address not valid.");
+        
+        // Handling of liquidity removal logic...
+        // This section will include further calculations and ratios based on conditions.
+        
+        // Emit relevant events to track the liquidity removal
+        emit RecordRemoveLiquidityGiveNbu(pairAddress, msg.sender, amount, liquidityAmount, additionalValue, block.timestamp);
+        emit RecordRemoveLiquidityUnclaimed(pairAddress, msg.sender, amount, block.timestamp, additionalValue);
+    }
+}
+```

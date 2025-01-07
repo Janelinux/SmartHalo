@@ -1,0 +1,125 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract FineTunedContract {
+    // State variables
+    mapping(address => uint256) private _balanceOf; // STORAGE[0x0]
+    mapping(address => uint256) private _increaseAllowance; // STORAGE[0x1]
+    uint256 private _totalSupply; // STORAGE[0x2]
+    uint256[] private _array3; // STORAGE[0x3]
+    uint256[] private _array4; // STORAGE[0x4]
+    uint256 private _maxTransactionAmount; // STORAGE[0x8]
+    uint256 private _swapTokensAtAmount; // STORAGE[0x9]
+    uint256 private _maxWallet; // STORAGE[0xa]
+    uint256 private _percentForLPBurn; // STORAGE[0xb]
+    uint256 private _lpBurnFrequency; // STORAGE[0xd]
+    uint256 private _lastLpBurnTime; // STORAGE[0xe]
+    uint256 private _manualBurnFrequency; // STORAGE[0xf]
+    uint256 private _lastManualLpBurnTime; // STORAGE[0x10]
+    mapping(address => uint256) private _ownerTransferBlock; // STORAGE[0x12]
+    uint256 private _buyTotalFees; // STORAGE[0x14]
+    uint256 private _buyMarketingFee; // STORAGE[0x15]
+    uint256 private _buyLiquidityFee; // STORAGE[0x16]
+    uint256 private _buyDevFee; // STORAGE[0x17]
+    uint256 private _sellTotalFees; // STORAGE[0x18]
+    uint256 private _sellMarketingFee; // STORAGE[0x19]
+    uint256 private _sellLiquidityFee; // STORAGE[0x1a]
+    uint256 private _sellDevFee; // STORAGE[0x1b]
+    uint256 private _tokensForMarketing; // STORAGE[0x1c]
+    uint256 private _tokensForLiquidity; // STORAGE[0x1d]
+    uint256 private _tokensForDev; // STORAGE[0x1e]
+    mapping(address => bool) private _isExcludedFromFees; // STORAGE[0x1f]
+    mapping(address => bool) private _isExcludedMaxTransactionAmount; // STORAGE[0x20]
+    mapping(address => bool) private _automatedMarketMakerPairs; // STORAGE[0x21]
+    uint256 private _lpBurnEnabled; // STORAGE[0xc]
+    uint256 private _limitsInEffect; // STORAGE[0x11]
+    uint256 private _tradingActive; // STORAGE[0x11]
+    uint256 private _swapEnabled; // STORAGE[0x11]
+    uint256 private _transferDelayEnabled; // STORAGE[0x13]
+    address private _owner; // STORAGE[0x5]
+    address private _marketingWallet; // STORAGE[0x6]
+    address private _devWallet; // STORAGE[0x7]
+
+    // Events
+    event DevWalletUpdated(address indexed previousDevWallet, address indexed newDevWallet);
+    event MarketingWalletUpdated(address indexed previousMarketingWallet, address indexed newMarketingWallet);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event ExcludeFromFees(address indexed account, bool isExcluded);
+    event ManualNukeLP();
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
+    event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiquidity);
+    event AutoNukeLP();
+
+    function _transfer(uint256 amount, address to, address from) private {
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(to != address(0), "ERC20: transfer to the zero address");
+
+        // Retrieve the balance of the sender (from) and ensure it can fulfill the transfer
+        uint256 senderBalance = _balanceOf[from];
+        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+
+        // Update the balances
+        _balanceOf[from] = _SafeSub(senderBalance, amount);
+        _balanceOf[to] = _SafeAdd(_balanceOf[to], amount);
+
+        // Emit transfer event
+        emit Transfer(from, to, amount);
+        return;
+    }
+
+    function _SafeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        require(!(a != 0 && b > ~uint256(0) / a), "Integer overflow");
+        return a * b;
+    }
+
+    function _SafeDiv(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a > 0, "Division by zero");
+        return b / a;
+    }
+
+    function _SafeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a >= b, "Subtraction overflow");
+        return a - b;
+    }
+
+    function _SafeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= ~b, "Addition overflow");
+        return a + b;
+    }
+
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(msg.data.length >= 68, "Invalid data length"); // 64 bytes for the parameters + 4 bytes for function selector
+        _transfer(amount, recipient, msg.sender);
+        return true;
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        require(msg.data.length >= 96, "Invalid data length"); // 64 bytes for parameters + 4 bytes for function selector
+
+        _transfer(amount, recipient, sender);
+
+        // Ensure the allowance is sufficient
+        uint256 currentAllowance = _increaseAllowance[sender];
+        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
+        _increaseAllowance[sender] = _SafeSub(currentAllowance, amount);
+
+        return true;
+    }
+
+    function approve(address spender, uint256 amount) public returns (bool) {
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _increaseAllowance[msg.sender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
+    function balanceOf(address account) public view returns (uint256) {
+        require(account != address(0), "ERC20: balance query for the zero address");
+        return _balanceOf[account];
+    }
+}
+```

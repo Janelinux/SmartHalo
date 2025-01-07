@@ -1,0 +1,38 @@
+Given the additional information provided about how specific state variables are used within various functions, I will revise the annotations to better reflect their functionality and purpose. Here’s the updated code incorporating your notes:
+
+```solidity
+mapping (uint256 => uint256) _balanceOf; // STORAGE[0x1] // Contract Attribute: address
+mapping (uint256 => mapping (uint256 => uint256)) _allowance; // STORAGE[0x2] // Contract Attribute: address
+mapping (uint256 => uint256) _excludedFromMaxWallet_; // STORAGE[0x3] // Contract Attribute: flag
+mapping (uint256 => uint256) _ethLiqudityPair; // STORAGE[0x4] // Contract Attribute: router
+mapping (uint256 => uint256) _excludedFromTx_; // STORAGE[0x5] // Contract Attribute: flag
+mapping (uint256 => uint256) _excludedFromTax_; // STORAGE[0x6] // Contract Attribute: flag
+uint256[] array_8; // STORAGE[0x8] // Contract Attribute: others
+uint256[] array_9; // STORAGE[0x9] // Contract Attribute: others
+uint256 __tTotal; // STORAGE[0xb] // Contract Attribute: asset
+uint256 stor_c; // STORAGE[0xc] // Contract Attribute: others
+uint256 stor_d; // STORAGE[0xd] // Contract Attribute: others
+uint256 _buyFEE; // STORAGE[0xe] // Contract Attribute: fees
+uint256 _sellFEE; // STORAGE[0xf] // Contract Attribute: fees
+uint256 stor_10; // STORAGE[0x10] // Contract Attribute: others
+uint256 stor_11; // STORAGE[0x11] // Contract Attribute: others
+uint256 stor_12; // STORAGE[0x12] // Contract Attribute: others
+uint256 __maxWalletToken; // STORAGE[0x13] // Contract Attribute: limit
+uint256 __maxTxAmount; // STORAGE[0x15] // Contract Attribute: limit
+uint256 _owner; // STORAGE[0x0] bytes 0 to 19 // Contract Attribute: address
+uint256 _decimals; // STORAGE[0xa] bytes 0 to 0 // Contract Attribute: others
+uint256 __TEAM_MARKETING_; // STORAGE[0x7] bytes 0 to 19 // Contract Attribute: address
+uint256 _uniswapV2Router; // STORAGE[0x17] bytes 0 to 19 // Contract Attribute: router
+uint256 _uniswapV2Pair; // STORAGE[0x19] bytes 0 to 19 // Contract Attribute: router
+uint256 _inSwapAndLiquify; // STORAGE[0x19] bytes 20 to 20 // Contract Attribute: others
+uint256 _swapAndLiquifyEnabled; // STORAGE[0x19] bytes 21 to 21 // Contract Attribute: flag
+uint256 stor_19_22_22; // STORAGE[0x19] bytes 22 to 22 // Contract Attribute: others
+```
+
+### Revised Annotations Based on Function Usage
+
+- The `_excludedFromTax_` and `_excludedFromTx_` variables are strongly associated as flags (likely indicating whether certain addresses are excluded from tax or transaction rules).
+- The `_balanceOf`, `_allowance`, and related address mappings clearly relate to asset ownership and transfers, hence labeled accordingly.
+- The `_buyFEE` and `_sellFEE` variables being transaction fees are marked as fees, and the limit variables are noted as limits based on their use in functions.
+
+This comprehensive labeling gives a clearer picture of each variable's role within the contract, allowing anyone reviewing the code to understand its structure and intent.

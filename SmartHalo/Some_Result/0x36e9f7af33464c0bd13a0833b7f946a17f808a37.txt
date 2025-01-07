@@ -1,0 +1,95 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+contract OptimizedContract {
+    // Data structures and variables inferred from the use of storage instructions
+    mapping(address => uint256) public manualSwap; // The name of the corresponding state variable before the modification:_manualSwap
+    mapping(address => mapping(address => uint256)) public allowance; // The name of the corresponding state variable before the modification:_allowance
+    mapping(address => uint256) public botStatus; // The name of the corresponding state variable before the modification:_isBot
+    mapping(address => uint256) public ownerTransactions; // The name of the corresponding state variable before the modification:owner_5
+    uint256 public totalSupply; // The name of the corresponding state variable before the modification:stor_7
+    uint256 public currentPrice; // The name of the corresponding state variable before the modification:stor_8
+    uint256 public transactionFee; // The name of the corresponding state variable before the modification:stor_9
+    uint256 public maxTransactionAmount; // The name of the corresponding state variable before the modification:__maxTxAmount
+    uint256 public maxWalletSize; // The name of the corresponding state variable before the modification:__maxWalletSize
+    uint256 public taxSwapThreshold; // The name of the corresponding state variable before the modification:__taxSwapThreshold
+    uint256 public maxTaxSwap; // The name of the corresponding state variable before the modification:__maxTaxSwap
+    address public ownerAccount; // The name of the corresponding state variable before the modification:_owner
+    bool public transferDelayEnabled; // The name of the corresponding state variable before the modification:_transferDelayEnabled
+    uint256 public ownerFlag; // The name of the corresponding state variable before the modification:owner_12
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event MaxTxAmountUpdated(uint256 newMaxTxAmount);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    function min(uint256 a, uint256 b) private pure returns (uint256) { 
+        return a < b ? a : b; 
+    }
+
+    function safeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a == 0 || (b == a * b / a), "Panic: arithmetic overflow or underflow");
+        return a * b;
+    }
+
+    function approve(uint256 amount, address spender, address owner) private {
+        require(spender != address(0), "ERC20: approve from the zero address");
+        require(owner != address(0), "ERC20: approve to the zero address");
+        allowance[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
+    }
+
+    function safeDiv(uint256 x, uint256 y, uint256 defaultValue) private pure returns (uint256) {
+        require(y > 0, "Panic: division by zero");
+        return x / y;
+    }
+
+    function safeSub(uint256 a, uint256 b, uint256 zeroValue) private pure returns (uint256) {
+        require(b <= zeroValue, "Panic: subtraction overflow");
+        return zeroValue - b;
+    }
+
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a + b >= a, "Panic: arithmetic overflow or underflow");
+        return a + b;
+    }
+
+    function increment(uint256 value) private pure returns (uint256) {
+        return value + 1; 
+    }
+
+    function transfer(address to, uint256 amount) public {
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(msg.data.length >= 64, "Data size too small");
+        executeTransfer(amount, to, msg.sender);
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public {
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(amount <= allowance[from][msg.sender], "ERC20: transfer amount exceeds allowance");
+        
+        executeTransfer(amount, to, from);
+        allowance[from][msg.sender] = safeSub(allowance[from][msg.sender], amount, allowance[from][msg.sender]);
+        approve(amount, msg.sender, from);
+    }
+
+    function executeTransfer(uint256 amount, address recipient, address sender) private {
+        require(amount > 0, "Transfer amount must be greater than zero");
+        require(sender != recipient, "ERC20: transfer to self is not allowed");
+
+        // Logic to check if sender or recipient is a bot
+        require(!isBot(sender) && !isBot(recipient), "Transfer prohibited for bots.");
+
+        // Implementing the transfer logic here
+
+        emit Transfer(sender, recipient, amount);
+    }
+
+    function isBot(address user) internal view returns (bool) {
+        return uint8(botStatus[user]) != 0;
+    }
+}
+```

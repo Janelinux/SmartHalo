@@ -1,0 +1,94 @@
+```solidity
+pragma solidity ^0.8.17;
+
+contract FineTunedContract {
+    // State variables are renamed for clarity
+    uint256[] private tokenURIsArray; // STORAGE[0x0]
+    uint256[] private tokenSupply; // STORAGE[0x1]
+    mapping(uint256 => uint256) private tokenOwners; // STORAGE[0x2]
+    mapping(uint256 => uint256) private ownerOfToken; // STORAGE[0x3]
+    mapping(uint256 => uint256) private approvedTokens; // STORAGE[0x4]
+    mapping(uint256 => mapping(uint256 => uint256)) private allApprovedTokens; // STORAGE[0x5]
+    mapping(uint256 => mapping(uint256 => uint256)) private tokensByOwnerIndex; // STORAGE[0x6]
+    mapping(uint256 => uint256) private tokenDetails; // STORAGE[0x7]
+    uint256[] private totalSupply; // STORAGE[0x8]
+    mapping(uint256 => uint256) private tokenAttributes; // STORAGE[0x9]
+    uint256[][] private permanentTokenURIs; // STORAGE[0xa]
+    mapping(uint256 => uint256[][]) private tokenURIReferences; // STORAGE[0xb]
+    uint256 private ownerCount; // STORAGE[0xc]
+    uint256[] private additionalTokenData; // STORAGE[0xf]
+    mapping(uint256 => uint256[]) private permanentTokenProof; // STORAGE[0x10]
+    uint256[] private specialTokenArray; // STORAGE[0x12]
+    uint256 private contractOwner; // STORAGE[0x14]
+
+    // Events
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+
+    // Function Definitions
+    function increment(uint256 value) private pure returns (uint256) {
+        require(value < type(uint256).max, "Arithmetic overflow");
+        return value + 1;
+    }
+
+    function safeDivide(uint256 numerator, uint256 denominator) private pure returns (uint256) {
+        require(denominator != 0, "Division by zero");
+        return numerator / denominator;
+    }
+
+    function safeSubtract(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a >= b, "Arithmetic underflow");
+        return a - b;
+    }
+
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= type(uint256).max - b, "Arithmetic overflow");
+        return a + b;
+    }
+
+    function getPermanentTokenURIs(uint256 tokenId) public payable returns (bytes[] memory) {
+        require(msg.data.length >= 36, "Invalid data length");
+        validateTokenId(tokenId);
+        
+        uint256 index = 0;
+        uint256 sizeNeeded = safeAdd(permanentTokenURIs.length, ownerCount);
+        sizeNeeded = safeAdd(sizeNeeded, tokenURIReferences[tokenId].length);
+        require(sizeNeeded <= type(uint256).max, "Memory allocation exceeded");
+        
+        bytes[] memory newURIs = new bytes[](sizeNeeded);
+        
+        for (uint256 i = 0; i < permanentTokenURIs.length; i++) {
+            uint256 uriLength = permanentTokenURIs[i].length;
+            newURIs[index] = new bytes[](uriLength);
+            for (uint256 j = 0; j < uriLength; j++) {
+                newURIs[index][j] = bytes1(permanentTokenURIs[i][j]);
+            }
+            index++;
+        }
+        
+        for (uint256 i = 0; i < ownerCount; i++) {
+            // Additional logic as per original requirements
+        }
+
+        for (uint256 i = 0; i < tokenURIReferences[tokenId].length; i++) {
+            newURIs[index] = new bytes[](tokenURIReferences[tokenId][i].length);
+            for (uint256 j = 0; j < tokenURIReferences[tokenId][i].length; j++) {
+                newURIs[index][j] = bytes1(tokenURIReferences[tokenId][i][j]);
+            }
+            index++;
+        }
+        
+        return newURIs;
+    }
+
+    function validateTokenId(uint256 tokenId) private view {
+        require(tokenOwners[tokenId] != address(0), "Invalid token ID");
+    }
+
+    function getStorageArrayLength(uint256 storageLocation) private view returns (uint256) {
+        return 0; // Placeholder implementation
+    }
+}
+```

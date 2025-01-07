@@ -1,0 +1,106 @@
+```solidity
+pragma solidity ^0.8.18;
+
+contract OptimizedContract {
+    uint256 public totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    uint256[] public tokensArray; // The name of the corresponding state variable before the modification:array_2
+    uint256[] public secondaryArray; // The name of the corresponding state variable before the modification:array_3
+    mapping (uint256 => uint256) public tokenMapping; // The name of the corresponding state variable before the modification:map_4
+    mapping (uint256 => uint256) public balanceOf; // The name of the corresponding state variable before the modification:_balanceOf
+    mapping (uint256 => uint256) public tokenApproval; // The name of the corresponding state variable before the modification:_approve
+    mapping (uint256 => mapping (uint256 => uint256)) public isApprovedForAll; // The name of the corresponding state variable before the modification:_isApprovedForAll
+    uint256[] public allocationArray; // The name of the corresponding state variable before the modification:array_9
+    uint256 public price; // The name of the corresponding state variable before the modification:_price
+    uint256 public maxPerTx; // The name of the corresponding state variable before the modification:_maxPerTx
+    uint256 public maxSupply; // The name of the corresponding state variable before the modification:_maxSupply
+    bool public mintEnabled; // The name of the corresponding state variable before the modification:_mintEnabled
+    address public owner; // The name of the corresponding state variable before the modification:_owner
+
+    // Events
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Internal function for safe division
+    function safeDiv(uint256 numerator, uint256 denominator) private pure returns (uint256) {
+        require(denominator != 0, "Division by zero");
+        return numerator / denominator;
+    }
+
+    // Internal function to validate tokens
+    function isValidToken(uint256 tokenId) private view returns (bool) {
+        bool isValid = true;
+
+        if (tokenId >= totalSupply) {
+            isValid = false;
+        }
+        
+        if (isValid) {
+            isValid = (tokenMapping[tokenId] & 0x100000000000000000000000000000000000000000000000000000000) == 0;
+        }
+        
+        return isValid;
+    }
+
+    // Internal function for safe addition
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= a + b, "Arithmetic overflow or underflow");
+        return a + b;
+    }
+
+    // Internal function to write to memory
+    function writeToMemory(uint256 index, uint256 destination) private returns (uint256) {
+        uint256 size = tokenMapping[index];
+        if (size & 0x1 == 0) {
+            assembly {
+                mstore(destination, size)
+            }
+            return destination + size * (size != 0 ? 1 : 0);
+        } else if (size & 0x1 == 1) {
+            uint256 counter = 0;
+            uint256 tempDestination = destination;
+            while (counter < size) {
+                assembly {
+                    mstore(tempDestination, sload(add(index, counter)))
+                }
+                tempDestination += 32;
+                counter += 32;
+            }
+            return destination + size;
+        } else {
+            return 0;
+        }
+    }
+
+    // Public function to get token URI
+    function tokenURI(uint256 tokenId) public view returns (string memory) {
+        require(tokenId < totalSupply, "URI query for nonexistent token");
+
+        // Base URI can be specified here
+        string memory baseURI = ""; 
+        
+        return string(abi.encodePacked(baseURI, uint256ToString(tokenId), ".json"));
+    }
+
+    // Utility function to convert uint256 to string
+    function uint256ToString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
+}
+```

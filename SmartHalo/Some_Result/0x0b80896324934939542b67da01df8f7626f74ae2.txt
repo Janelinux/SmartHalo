@@ -1,0 +1,131 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.9;
+
+contract OptimizedContract {
+    // State Variables
+    mapping (uint256 => uint256) public ownerReflections; // The name of the corresponding state variable before the modification: owner_2
+    mapping (uint256 => mapping (uint256 => uint256)) public allowances; // The name of the corresponding state variable before the modification: _allowance
+    mapping (uint256 => uint256) public reflectionMap; // The name of the corresponding state variable before the modification: map_5
+    mapping (uint256 => uint256) public ownerFees; // The name of the corresponding state variable before the modification: owner_6
+    uint256 public maxTotalReflections; // The name of the corresponding state variable before the modification: stor_8
+    uint256 public totalFee; // The name of the corresponding state variable before the modification: stor_9
+    uint256 public accumulatedFees; // The name of the corresponding state variable before the modification: stor_a
+    uint256 public previousOwnerFee; // The name of the corresponding state variable before the modification: stor_b
+    uint256 public currentFees; // The name of the corresponding state variable before the modification: stor_c
+    uint256 public liquidityPool; // The name of the corresponding state variable before the modification: owner_f
+    uint256 public maxTransactionAmount; // The name of the corresponding state variable before the modification: stor_10
+    uint256 public maxWalletSize; // The name of the corresponding state variable before the modification: stor_11
+    address public contractOwner; // The name of the corresponding state variable before the modification: _owner
+    address public manualSwap; // The name of the corresponding state variable before the modification: _manualswap
+    address public currentExchange; // The name of the corresponding state variable before the modification: stor_e_0_19
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    function manualTokenSwap(uint256 amountToSwap) private {
+        liquidityPool = 0x1000000000000000000000000000000000000000000 | (~0xff000000000000000000000000000000000000000000 & liquidityPool);
+        
+        address[] memory addressArray = new address[](2);
+        require(msg.data.length >= 64, "Insufficient data length"); // Ensure msg.data is of type bytes
+
+        addressArray[0] = address(this); 
+        require(currentExchange.code.length > 0, "Current exchange has no code"); // This is type-safe
+
+        (bool success, bytes memory data) = currentExchange.call(abi.encodeWithSignature("WETH()"));
+        require(success, "WETH call failed");
+        
+        address receivedAddress = abi.decode(data, (address));
+        require(receivedAddress != address(0), "Invalid address");
+        addressArray[1] = receivedAddress;
+
+        executeSwap(amountToSwap, currentExchange, address(this));
+
+        for (uint256 i = 0; i < addressArray.length; i++) {
+            // Transfer logic (not detailed in the original code) goes here
+        }
+        
+        (bool swapSuccess, ) = currentExchange.call{gas: gasleft()}(
+            abi.encodeWithSignature(
+                "swapExactTokensForETHSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)",
+                amountToSwap,
+                0,
+                addressArray,
+                address(this),
+                block.timestamp
+            )
+        );
+        require(swapSuccess, "Swap failed");
+
+        liquidityPool = (~0xff000000000000000000000000000000000000000000 & liquidityPool);
+    }
+
+    function getReflection(uint256 account) private view returns (uint256) {
+        require(ownerReflections[account] <= maxTotalReflections, "Amount must be less than total reflections");
+        
+        (uint256 totalSupply, uint256 totalFees) = calculateTotalSupplyAndFees();
+        uint256 reflectionAmount = _safeDiv(totalSupply, totalFees);
+        return _safeDiv(reflectionAmount, ownerReflections[account]);
+    }
+
+    function _safeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a == 0 || b <= type(uint256).max / a, "Arithmetic overflow");
+        return a * b;
+    }
+
+    function _safeDiv(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b > 0, "Division by zero");
+        return a / b;
+    }
+
+    function _safeSub(uint256 a, uint256 b) private pure returns (uint256) {
+        require(b <= a, "Arithmetic overflow");
+        return a - b;
+    }
+
+    function transferTokens(address from, address to, uint256 amount) public {
+        require(from != address(0), "Transfer from the zero address");
+        require(to != address(0), "Transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+        
+        (bool isOwnerFrom, bool isOwnerTo) = (contractOwner != from, contractOwner != to);
+
+        if (isOwnerFrom) {
+            // Logic for reflecting fees or conditions on transfer
+        }
+        
+        uint256 allowanceAmount = allowances[from][msg.sender];
+        uint256 remainingAmount = _safeSub(amount, allowanceAmount);
+        
+        require(remainingAmount <= 0, "Transfer amount exceeds allowance");
+        
+        address caller = msg.sender;
+        allowances[from][caller] = remainingAmount;
+        
+        // Logic for updating total reflections and transferring balances
+        emit Transfer(from, to, amount);
+    }
+
+    function _safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= type(uint256).max - b, "Arithmetic overflow");
+        return a + b;
+    }
+
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(msg.data.length >= 64, "Insufficient data length");
+        transferTokens(msg.sender, recipient, amount);
+        return true;
+    }
+
+    // Placeholder functions to avoid compilation errors
+    function calculateTotalSupplyAndFees() private view returns (uint256, uint256) {
+        return (0, 0); // Placeholder return values
+    }
+
+    function executeSwap(uint256 amountToSwap, address exchange, address to) private {
+        // Placeholder function body
+    }
+}
+```

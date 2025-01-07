@@ -1,0 +1,124 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract ExampleContract {
+    uint256 private initializationStatus;
+    uint256 private initializationDepth;
+    mapping (uint256 => uint256) private balances;
+    mapping (uint256 => uint256) private allowances;
+    uint256 private totalSupply;
+    bytes[] private name;
+    bytes[] private symbol;
+    mapping (uint256 => uint256) private roleAdmins;
+    address[] private blacklist;
+    mapping (uint256 => uint256) private owners;
+    mapping (uint256 => uint256) private additionalMapping;
+    uint256 private pausedStatus;
+
+    // Events
+    event Initialized(uint8 version);
+    event BlacklistAdded(address account);
+    event BlacklistRemoved(address account);
+    event Approval(address owner, address spender, uint256 amount);
+    event Unpaused(address account);
+    event Transfer(address from, address to, uint256 amount);
+    event Paused(address account);
+    event RoleGranted(bytes32 role, address account, address sender);
+    event RoleRevoked(bytes32 role, address account, address sender);
+
+    // This function calculates the necessary initialization validations including name and symbol variables
+    function validateInitialization(uint256 currentDepth, uint256 newLength) private {
+        require(initializationDepth > 0, "Initializable: contract is not initializing");
+        require(newLength <= 0xffffffffffffffff, "Panic(65)");
+
+        uint256 totalNameLength = name.length;
+
+        if (totalNameLength > 31) {
+            uint256 storageIndex = currentDepth + ((newLength + 31) >> 5);
+            while (storageIndex < currentDepth + ((totalNameLength + 31) >> 5)) {
+                // STORAGE[storageIndex] = STORAGE[storageIndex] & ~0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | 0x0;
+                storageIndex++;
+            }
+        }
+
+        uint256 dataIndex = 32;
+        if (newLength > 31) {
+            uint256 processIndex = 0;
+            while (processIndex < newLength & ~uint256(0x1f)) {
+                // STORAGE[dataIndex >> 5] = MEM[newLength + (dataIndex)];
+                dataIndex += 32;
+                processIndex += 32;
+            }
+            if ((newLength & ~uint256(0x1f)) < newLength) {
+                // STORAGE[dataIndex >> 5] = MEM[newLength + (dataIndex)] & ~(~uint256(0) >> ((newLength & 0x1f) << 3));
+            }
+            name.length = (newLength << 1) + 1;
+        } else {
+            uint256 dataValue = (newLength != 0) ? uint256(bytes32(0)) : 0;
+            name.length = dataValue & ~(~uint256(0) >> (newLength << 3)) | newLength << 1;
+        }
+    }
+
+    // Initialize function sets the contract's name and symbol
+    function initialize(bytes memory newName, bytes memory newSymbol) public payable {
+        require(msg.data.length >= 64 + 4, "Invalid Data Length");
+        require(newName.length <= 0xffffffffffffffff, "Panic(65)");
+        require(newName.length > 0 && newSymbol.length > 0, "Name or Symbol cannot be empty");
+
+        validateInitialization(initializationDepth, newName.length);
+        validateInitialization(initializationDepth, newSymbol.length);
+
+        // Copying name from calldata to memory
+        bytes memory tempName = new bytes(newName.length);
+        for (uint256 i = 0; i < newName.length; i++) {
+            tempName[i] = newName[i];
+        }
+        tempName[newName.length] = 0;
+
+        // Copying symbol from calldata to memory
+        bytes memory tempSymbol = new bytes(newSymbol.length);
+        for (uint256 i = 0; i < newSymbol.length; i++) {
+            tempSymbol[i] = newSymbol[i];
+        }
+        tempSymbol[newSymbol.length] = 0;
+
+        // Set the name and symbol
+        setDetails(tempSymbol, tempName);
+    }
+
+    // Set details and verify contract initialization
+    function setDetails(bytes memory newSymbol, bytes memory newName) private {
+        // Ensure contract is ready for setup
+        require(initializationDepth > 0, "Initializable: contract is not initializing");
+
+        // Further code to set symbols and names...
+
+        // Check if contract is already initialized
+        require(!isInitialized(), "Initializable: contract is already initialized");
+        initializationStatus = 1;
+        if (initializationDepth == 0) {
+            initializationDepth = 1;
+        }
+
+        // Call to other function with address and constants
+        anotherCall(msg.sender, 0); // Type of msg.sender is `address`
+        anotherCall(msg.sender, 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a); // Type of msg.sender is `address`
+        anotherCall(msg.sender, 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6); // Type of msg.sender is `address`
+        anotherCall(msg.sender, 0x59a1c48e5837ad7a7f3dcedcbe129bf3249ec4fbf651fd4f5e2600ead39fe2f5); // Type of msg.sender is `address`
+
+        // Emit the initialized event
+        emit Initialized(1);
+    }
+
+    // Dummy anotherCall function for demonstration purposes to avoid compilation errors
+    function anotherCall(address recipient, uint256 data) private {
+        // Logic for another call can be implemented here.
+    }
+
+    // Dummy isInitialized function for demonstration purposes to avoid compilation errors
+    function isInitialized() private view returns (bool) {
+        return initializationStatus == 1;
+    }
+}
+```

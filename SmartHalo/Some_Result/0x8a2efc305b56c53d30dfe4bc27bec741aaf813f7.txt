@@ -1,0 +1,41 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+// Improved data structures with meaningful names
+contract RewardsManager {
+    mapping (uint256 => uint256[]) private _pendingRewards; // STORAGE[0x1]
+    mapping (uint256 => uint256[]) private _claimedRewards; // STORAGE[0x2]
+    address private _owner; // STORAGE[0x0]
+
+    // Events
+    event EmergencyRewardWithdraw(uint256);
+    event Claimed(uint256); // Corrected spelling
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    constructor() {
+        _owner = msg.sender;
+    }
+
+    function allocate(address[] calldata recipients, uint256[] calldata rewards) public payable {
+        uint256 recipientsLength = recipients.length;
+        uint256 rewardsLength = rewards.length;
+
+        require(msg.data.length - 4 >= 64, "Invalid input lengths");
+        require(recipientsLength <= 0xffffffffffffffff, "Invalid recipients length");
+        require(recipientsLength == rewardsLength, "Mismatched array lengths");
+
+        require(_owner == msg.sender, "Ownable: caller is not the owner");
+
+        for (uint256 i = 0; i < recipientsLength; i++) {
+            require(_pendingRewards[uint256(uint160(recipients[i]))].length <= ~rewards[i], "Invalid reward amount");
+            _pendingRewards[uint256(uint160(recipients[i]))].push(rewards[i]);
+        }
+    }
+
+    function _calculateMemoryOffset(uint256 length) private pure returns (uint256) {
+        require(length <= 0xffffffffffffffff, "Invalid length");
+        return (length << 5) + 32;
+    }
+}
+```

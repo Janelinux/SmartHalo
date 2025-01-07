@@ -1,0 +1,82 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract ImprovedContract {
+    // State variables
+    uint256[] private names; // STORAGE[0x0]
+    uint256[] private symbols; // STORAGE[0x1]
+    mapping(uint256 => uint256[]) private tokenURIs; // STORAGE[0x2]
+    mapping(uint256 => uint256[]) private tokenOwners; // STORAGE[0x3]
+    mapping(uint256 => uint256[]) private additionalMetadata; // STORAGE[0x4]
+    mapping(uint256 => uint256[]) private approvals; // STORAGE[0x5]
+    mapping(uint256 => uint256[]) private customDataMap1; // STORAGE[0x6]
+    mapping(uint256 => uint256[]) private customDataMap2; // STORAGE[0x7]
+    uint256[] private totalSupply; // STORAGE[0x8]
+    mapping(uint256 => uint256[]) private customDataMap3; // STORAGE[0x9]
+    uint256[] private baseURIStorage; // STORAGE[0xb]
+    uint256[] private baseExtension; // STORAGE[0xc]
+    uint256[] private notRevealedURIStorage; // STORAGE[0xd]
+    uint256 private cost; // STORAGE[0xe]
+    uint256 private maxSupply; // STORAGE[0xf]
+    uint256 private maxMintAmount; // STORAGE[0x10]
+    uint256 private nftPerAddressLimit; // STORAGE[0x11]
+    uint256[] private whitelistedAddresses; // STORAGE[0x13]
+    uint256 private pauseStatus; // STORAGE[0x12] bytes 0 to 0
+    uint256 private revealFlag; // STORAGE[0x12] bytes 1 to 1
+    uint256 private onlyWhitelisted; // STORAGE[0x12] bytes 2 to 2
+    uint256 private ownerAddress; // STORAGE[0xa] bytes 0 to 19
+
+    // Events
+    event Approval(address indexed owner, address indexed approved, uint256 tokenId);
+    event Transfer(address indexed from, address indexed to, uint256 tokenId);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+
+    // Function to process the token URI based on a token ID
+    function generateTokenURI(uint256 tokenId) private view returns (bytes memory) {
+        // Ensure that the tokenId is valid 
+        require(tokenURIs[tokenId].length > 0, "ERC721Metadata: URI query for nonexistent token");
+        
+        bytes memory uriResult;
+        
+        if (revealFlag != 0) {
+            uint256 uriLength = baseURIStorage.length;
+            uriResult = new bytes(uriLength);
+            
+            for (uint256 i = 0; i < uriLength; i++) {
+                uriResult[i] = baseURIStorage[i]; // Copy base URI
+            }
+
+            // Add additional URI data based on tokenId
+            uint256[] memory additionalData = tokenURIs[tokenId];
+            for (uint256 j = 0; j < additionalData.length; j++) {
+                uriResult = abi.encodePacked(uriResult, additionalData[j]); // Correctly packed into bytes
+            }
+
+            // Append base extension if available
+            uint256 baseExtLength = baseExtension.length;
+            for (uint256 k = 0; k < baseExtLength; k++) {
+                uriResult = abi.encodePacked(uriResult, baseExtension[k]); // Correctly packed into bytes
+            }
+        } else {
+            // If not revealed, return not revealed URI
+            uint256 notRevealedLength = notRevealedURIStorage.length;
+            uriResult = new bytes(notRevealedLength);
+            for (uint256 m = 0; m < notRevealedLength; m++) {
+                uriResult[m] = notRevealedURIStorage[m]; // Copy not revealed URI
+            }
+        }
+
+        // Return the constructed URI
+        return uriResult;
+    }
+
+    // Function to get token's URI as publicly accessible
+    function tokenURI(uint256 tokenId) public view returns (string memory) {
+        require(msg.data.length >= 4 + 32, "Invalid data length"); // Require proper data length
+        bytes memory uriBytes = generateTokenURI(tokenId); // Generate the URI bytes
+        return string(uriBytes); // Return the generated URI as a string
+    }
+}
+```

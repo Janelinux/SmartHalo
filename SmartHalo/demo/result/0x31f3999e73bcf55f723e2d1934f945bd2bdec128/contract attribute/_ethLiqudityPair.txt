@@ -1,0 +1,34 @@
+Based on the additional notes provided regarding the usage of the state variables in the various functions, I will update the annotations to clarify their roles. 
+
+Here is the revised code with updated annotations for the state variables:
+
+```solidity
+mapping (uint256 => uint256) _balanceOf; // STORAGE[0x1] // Asset Attribute (used in balanceOf function)
+mapping (uint256 => mapping (uint256 => uint256)) _allowance; // STORAGE[0x2] // Asset Attribute (used in _allowance function)
+mapping (uint256 => uint256) _excludedFromMaxWallet_; // STORAGE[0x3] // Limit Attribute (used in ExcludedFromMaxWallet_ function)
+mapping (uint256 => uint256) _ethLiqudityPair; // STORAGE[0x4] // Address Attribute (used in EthLiqudityPair function)
+mapping (uint256 => uint256) _excludedFromTx_; // STORAGE[0x5] // Limit Attribute (used in ExcludedFromTx_ function)
+mapping (uint256 => uint256) _excludedFromTax_; // STORAGE[0x6] // Fees Attribute (used in ExcludedFromTax_ function)
+uint256[] array_8; // STORAGE[0x8] // Others Attribute
+uint256[] array_9; // STORAGE[0x9] // Others Attribute
+uint256 __tTotal; // STORAGE[0xb] // Asset Attribute
+uint256 stor_c; // STORAGE[0xc] // Others Attribute
+uint256 stor_d; // STORAGE[0xd] // Others Attribute
+uint256 _buyFEE; // STORAGE[0xe] // Fees Attribute (used in BuyFEE function)
+uint256 _sellFEE; // STORAGE[0xf] // Fees Attribute (used in SellFEE function)
+uint256 stor_10; // STORAGE[0x10] // Others Attribute
+uint256 stor_11; // STORAGE[0x11] // Others Attribute
+uint256 stor_12; // STORAGE[0x12] // Others Attribute
+uint256 __maxWalletToken; // STORAGE[0x13] // Limit Attribute (used in _maxWalletToken function)
+uint256 __maxTxAmount; // STORAGE[0x15] // Limit Attribute (used in _maxTxAmount function)
+uint256 _owner; // STORAGE[0x0] bytes 0 to 19 // Address Attribute
+uint256 _decimals; // STORAGE[0xa] bytes 0 to 0 // Others Attribute
+uint256 __TEAM_MARKETING_; // STORAGE[0x7] bytes 0 to 19 // Address Attribute
+uint256 _uniswapV2Router; // STORAGE[0x17] bytes 0 to 19 // Router Attribute
+uint256 _uniswapV2Pair; // STORAGE[0x19] bytes 0 to 19 // Address Attribute
+uint256 _inSwapAndLiquify; // STORAGE[0x19] bytes 20 to 20 // Others Attribute
+uint256 _swapAndLiquifyEnabled; // STORAGE[0x19] bytes 21 to 21 // Others Attribute
+uint256 stor_19_22_22; // STORAGE[0x19] bytes 22 to 22 // Others Attribute
+```
+
+The annotations have been updated to include mentions of the specific functions where the state variables are being read or written. This should provide a clearer context for the purpose of each state variable in the contract.

@@ -1,0 +1,20 @@
+```solidity
+// Decompiled by library.dedaub.com
+// 2023.05.11 03:10 UTC
+// Compiled using the solidity compiler version 0.8.17
+// Warning: 65.0% of the contract's code is inferred to be dead code.
+
+pragma solidity ^0.8.17;
+
+contract ImplementationContract {
+    // State variable to store the address of the fallback implementation
+    uint256 private fallbackImplementation; // The name of the corresponding state variable before the modification: _fallback
+    
+    // Function to retrieve the address of the fallback implementation
+    // This function is public and does not accept any Ether
+    function getFallbackImplementation() public view returns (uint256) {
+        // The purpose of this function is to return the fallbackImplementation value
+        return fallbackImplementation; // Returns the stored fallback implementation address
+    }
+}
+```

@@ -1,0 +1,11 @@
+```solidity
+pragma solidity ^0.8.17;
+
+contract Example {
+    uint256 private fallbackImplementation;
+
+    function getFallbackImplementation() public view returns (uint256) {
+        return fallbackImplementation;
+    }
+}
+```

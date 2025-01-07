@@ -1,0 +1,40 @@
+Given the additional context you've provided, here is the updated code with the appropriate "Contract Attribute" annotations for the state variables based on their usage in the specified functions:
+
+```solidity
+// Decompiled by library.dedaub.com
+// 2023.07.21 09:49 UTC
+// Compiled using the solidity compiler version 0.8.19
+// Data structures and variables inferred from the use of storage instructions
+mapping (uint256 => uint256) owner_2; // STORAGE[0x2] // Contract Attribute: address
+mapping (uint256 => mapping (uint256 => uint256)) _allowance; // STORAGE[0x4] // Contract Attribute: fees
+mapping (uint256 => uint256) owner_5; // STORAGE[0x5] // Contract Attribute: address (used in excludeMultipleAccountsFromFees)
+uint256 stor_6; // STORAGE[0x6] // Contract Attribute: others (read in multiple functions)
+uint256 stor_7; // STORAGE[0x7] // Contract Attribute: others
+uint256 stor_8; // STORAGE[0x8] // Contract Attribute: others (written in function 0xe9804266)
+uint256 stor_9; // STORAGE[0x9] // Contract Attribute: others (written in function 0xe9804266)
+uint256 stor_a; // STORAGE[0xa] // Contract Attribute: others (written in function 0xe9804266)
+uint256 stor_b; // STORAGE[0xb] // Contract Attribute: others (written in function 0xe9804266)
+uint256 stor_c; // STORAGE[0xc] // Contract Attribute: others
+uint256 stor_d; // STORAGE[0xd] // Contract Attribute: others
+uint256 stor_e; // STORAGE[0xe] // Contract Attribute: others
+uint256 stor_f; // STORAGE[0xf] // Contract Attribute: others
+mapping (uint256 => uint256) _bots; // STORAGE[0x10] // Contract Attribute: flag (read in function bots)
+mapping (uint256 => uint256) __buyMap; // STORAGE[0x11] // Contract Attribute: others
+uint256 __maxTxAmount; // STORAGE[0x16] // Contract Attribute: limit (read in function _maxTxAmount, written in function setMaxTxnAmount)
+uint256 __maxWalletSize; // STORAGE[0x17] // Contract Attribute: limit (read in function _maxWalletSize, written in function setMaxWalletSize)
+uint256 __swapTokensAtAmount; // STORAGE[0x18] // Contract Attribute: others (read in function _swapTokensAtAmount, written in setMinSwapTokensThreshold)
+uint256 _owner; // STORAGE[0x0] bytes 0 to 19 // Contract Attribute: address
+uint256 _manualswap; // STORAGE[0x12] bytes 0 to 19 // Contract Attribute: flag
+uint256 owner_13_0_19; // STORAGE[0x13] bytes 0 to 19 // Contract Attribute: address
+uint256 _uniswapV2Router; // STORAGE[0x14] bytes 0 to 19 // Contract Attribute: router
+uint256 _uniswapV2Pair; // STORAGE[0x15] bytes 0 to 19 // Contract Attribute: router
+uint256 stor_15_20_20; // STORAGE[0x15] bytes 20 to 20 // Contract Attribute: others
+uint256 stor_15_21_21; // STORAGE[0x15] bytes 21 to 21 // Contract Attribute: others
+uint256 stor_15_22_22; // STORAGE[0x15] bytes 22 to 22 // Contract Attribute: others
+// Events
+OwnershipTransferred(address, address);
+Approval(address, address, uint256);
+Transfer(address, address, uint256);
+```
+
+In this update, I've incorporated insights from the function notes to provide accurate annotations that reflect the roles of the state variables in relation to specific functions.

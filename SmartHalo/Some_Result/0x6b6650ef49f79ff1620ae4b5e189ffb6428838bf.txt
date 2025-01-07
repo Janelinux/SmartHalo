@@ -1,0 +1,77 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract FineTuned {
+    // Variables representing the state of the contract
+    uint256 private _paused; // The name of the corresponding state variable before the modification: _paused
+    mapping(uint256 => uint256) private _freezing; // The name of the corresponding state variable before the modification: _freezing
+    mapping(uint256 => uint256) private _balanceOf; // The name of the corresponding state variable before the modification: _balanceOf
+    mapping(uint256 => mapping(uint256 => uint256)) private _allowance; // The name of the corresponding state variable before the modification: _allowance
+    uint256 private _totalSupply; // The name of the corresponding state variable before the modification: _totalSupply
+    string private _name; // The name of the corresponding state variable before the modification: _name
+    string private _symbol; // The name of the corresponding state variable before the modification: _symbol
+    address private _owner; // The name of the corresponding state variable before the modification: _owner
+    uint8 private _decimals; // The name of the corresponding state variable before the modification: _decimals
+
+    // Events
+    event Freezinged(address indexed account);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event RejectedPaymentFromFreezingedAddr(address indexed sender, address indexed recipient, uint256 value);
+    event RejectedPaymentToFreezingedAddr(address indexed sender, address indexed recipient, uint256 value);
+    event Transfer(address indexed sender, address indexed recipient, uint256 value);
+    event Unpaused(address account);
+    event Paused(address account);
+
+    // Optimized internal transfer function
+    function _transfer(uint256 amount, address recipient, address sender) private {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        // Check if sender is not frozen
+        require(_freezing[uint256(uint160(sender))] != 1, "You are Freezing");
+
+        // Check if recipient is not frozen
+        require(_freezing[uint256(uint160(recipient))] != 1, "recipient are Freezing");
+
+        // Check balance
+        uint256 senderBalance = _balanceOf[uint256(uint160(sender))];
+        require(senderBalance >= amount, "transfer amount exceeds balance");
+
+        // Transfer logic
+        _balanceOf[uint256(uint160(sender))] = _safeSub(senderBalance, amount);
+        _balanceOf[uint256(uint160(recipient))] += amount;
+
+        emit Transfer(sender, recipient, amount);
+    }
+
+    // Safe subtraction function to handle underflow
+    function _safeSub(uint256 value, uint256 subtractor) private pure returns (uint256) {
+        require(subtractor <= value, "SafeMath: subtraction overflow");
+        return value - subtractor;
+    }
+
+    // Main transfer function
+    function transfer(address recipient, uint256 amount) public payable {
+        require(msg.data.length >= 64, "Invalid data length"); // msg.data is of type bytes
+        require(_paused == 0, "Pausable: paused");
+        _transfer(amount, recipient, msg.sender);
+    }
+
+    // Transfer function allowing approved spenders to transfer tokens
+    function transferFrom(address sender, address recipient, uint256 amount) public payable {
+        require(msg.data.length >= 96, "Invalid data length"); // msg.data is of type bytes
+        require(_paused == 0, "Pausable: paused");
+        _transfer(amount, recipient, sender);
+
+        // Update allowance for transfer
+        uint256 allowance = _allowance[uint256(uint160(sender))][uint256(uint160(msg.sender))];
+        // Storage retrieval based on the hash of sender and recipient details
+        uint256 newAllowance = _safeSub(allowance, amount); // asset is being modified.
+        _allowance[uint256(uint160(sender))][uint256(uint160(msg.sender))] = newAllowance; // The allowance updates.
+
+        emit Approval(sender, msg.sender, newAllowance);
+    }
+}
+```

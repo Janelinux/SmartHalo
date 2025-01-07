@@ -1,0 +1,14 @@
+```solidity
+pragma solidity ^0.8.17;
+
+contract FallbackAddressContract {
+    // State variable to store the fallback address
+    uint256 private fallbackAddress; // The name of the corresponding state variable before the modification: _fallback
+
+    // Function to retrieve the current fallback address
+    function getFallbackAddress() public view returns (uint256) {
+        // Here we return the value of the fallbackAddress stored in the state variable
+        return fallbackAddress; // Retrieves value of fallback address
+    }
+}
+```

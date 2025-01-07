@@ -1,0 +1,89 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract StakingContract {
+    // Storage variables
+    uint256 public initializeState; // The name of the corresponding state variable before the modification: _initialize
+    uint8 public unstakeState; // The name of the corresponding state variable before the modification: _unstake
+    uint256 public rewardsPerLevel; // The name of the corresponding state variable before the modification: _rewardsPerlevel
+    mapping (uint256 => uint256) public rewards; // The name of the corresponding state variable before the modification: _rewards
+    mapping (uint256 => uint256) public stakedHeroes; // The name of the corresponding state variable before the modification: _stakedHeroes
+    address public owner; // The name of the corresponding state variable before the modification: _owner
+    address public tempOwner1; // The name of the corresponding state variable before the modification: stor_c9_0_19
+    address public tempOwner2; // The name of the corresponding state variable before the modification: stor_ca_0_19
+    address public tempOwner3; // The name of the corresponding state variable before the modification: stor_1681_0_19
+
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Stake function
+    function stake(
+        uint256[] calldata tokenIds, // IDs of tokens to stake 
+        uint256[] calldata amounts, // amounts to stake
+        address recipient, // recipient of rewards
+        uint32 deadline, // deadline for staking
+        bytes calldata signature // signature for validation
+    ) public payable { 
+        // Pre-condition checks for data length
+        require(msg.data.length >= 164, "Data length too short"); // Ensure the required length of data is met
+        require(tokenIds.length > 0 && amounts.length > 0, "Token IDs and amounts cannot be empty");
+        require(tokenIds.length == amounts.length, "Mismatch between token IDs and amounts");
+        
+        // Ensure total length checks
+        require(4 + tokenIds.length * 32 + 32 <= msg.data.length, "Data length insufficient for token IDs");
+        require(4 + amounts.length * 32 + 32 <= msg.data.length, "Data length insufficient for amounts");
+        require(4 + signature.length + 32 <= msg.data.length, "Data length insufficient for signature");
+
+        // Timestamp Condition check
+        require(block.timestamp <= deadline, "Timestamp exceeds limit");
+        
+        // Prevent reentrancy
+        require(unstakeState != 2, "ReentrancyGuard: reentrant call");
+        unstakeState = 2;
+
+        // Create a memory structure for data processing
+        uint256[] memory dataArray = new uint256[](tokenIds.length + amounts.length + 5);
+        dataArray[0] = tokenIds.length;
+
+        // Collect token data and validate ownership
+        for (uint256 index = 0; index < tokenIds.length; index++) {
+            // Validate token ownership and transfer
+            (bool success, address tokenOwner) = validateTokenOwnership(tokenIds[index], msg.sender);
+            require(success, "Not the token owner");
+            
+            // Transfer the token to this contract for staking
+            transferToken(msg.sender, address(this), tokenIds[index]);
+            dataArray[index + 1] = amounts[index]; // collect respective amounts
+        }
+
+        // Further logic for handling rewards and signature verification goes here...
+
+        unstakeState = 1; // Reset the state back
+    }
+
+    // Function to validate ownership of a token
+    function validateTokenOwnership(uint256 tokenId, address tokenOwner) internal pure returns (bool success, address) {
+        // Here, additional logic for checking ownership can be implemented
+        // For example, accessing some ERC721 contract
+        // This is a placeholder; actual implementation would need contract call
+        return (true, tokenOwner);
+    }
+
+    // Function to safely transfer the token from user to contract
+    function transferToken(address from, address to, uint256 tokenId) internal pure {
+        // Here, logic to call safeTransferFrom on the ERC721 contract would be implemented
+    }
+
+    // Additional private functions for safe arithmetic operations
+    function safeMul(uint256 a, uint256 b) private pure returns (uint256) {
+        require(!(a == 0 && (b > (~uint256(0) / a))), "Multiplication overflow");
+        return a * b;
+    }
+
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a + b >= a, "Addition overflow");
+        return a + b;
+    }
+}
+```

@@ -1,0 +1,114 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OptimizedContract {
+    uint256[] private tokenNames; // The name of the corresponding state variable before the modification:_name
+    uint256[] private tokenSymbols; // The name of the corresponding state variable before the modification:_symbol
+    mapping(uint256 => uint256[]) private tokenURIMapping; // The name of the corresponding state variable before the modification:map_2
+    mapping(uint256 => uint256[]) private tokenOwnership; // The name of the corresponding state variable before the modification:owner_3
+    mapping(uint256 => uint256[]) private otherMapping; // The name of the corresponding state variable before the modification:map_4
+    mapping(uint256 => uint256[]) private approvalMapping; // The name of the corresponding state variable before the modification:_isApprovedForAll
+    mapping(uint256 => uint256[]) private additionalMapping; // The name of the corresponding state variable before the modification:map_6
+    mapping(uint256 => uint256[]) private secondaryOwnership; // The name of the corresponding state variable before the modification:owner_7
+    mapping(uint256 => uint256[]) private anotherMapping; // The name of the corresponding state variable before the modification:map_8
+    uint256[] private totalSupply; // The name of the corresponding state variable before the modification:_totalSupply
+    mapping(uint256 => uint256[]) private preSaleMapping; // The name of the corresponding state variable before the modification:map_a
+    uint256[] private additionalArray; // The name of the corresponding state variable before the modification:array_c
+    uint256 private tokenPrice; // The name of the corresponding state variable before the modification:_getTokenPrice
+    uint256 private totalMinted; // The name of the corresponding state variable before the modification:_totalMint
+    uint256 private pausedState; // The name of the corresponding state variable before the modification:_paused
+    uint256 private hasPresaleStarted; // The name of the corresponding state variable before the modification:_hasPresaleStarted
+    address private contractOwner; // The name of the corresponding state variable before the modification:_owner
+
+    // Events
+    event Giveaway(address indexed recipient, uint256 amount);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Unpaused(address account);
+    event Paused(address account);
+
+    // Safe arithmetic functions
+    function safeDivide(uint256 numerator, uint256 denominator) private pure returns (uint256) {
+        require(denominator != 0, "Division by zero");
+        return numerator / denominator;
+    }
+
+    function safeSubtract(uint256 minuend, uint256 subtrahend) private pure returns (uint256) {
+        require(minuend >= subtrahend, "Underflow");
+        return minuend - subtrahend;
+    }
+
+    function incrementTokenID(uint256 tokenId) private pure returns (uint256) {
+        require(tokenId != type(uint256).max, "Token ID overflow");
+        return tokenId + 1;
+    }
+
+    function getTokenURI(uint256 tokenId) private view returns (string memory) {
+        require(tokenURIMapping[tokenId].length != 0, "URI query for nonexistent token");
+        uint256 uriLength = tokenURIMapping[tokenId].length;
+        bytes memory uriBytes = new bytes(uriLength);
+
+        for (uint256 i = 0; i < uriLength; i++) {
+            uriBytes[i] = bytes1(tokenURIMapping[tokenId][i]);
+        }
+        
+        return string(uriBytes); // Correctly returning as string
+    }
+
+    function bytesToString(uint256 value) private pure returns (string memory) {
+        if (value == 0) {
+            return "0"; // Return string for zero
+        }
+
+        uint256 length;
+        uint256 temp = value;
+        while (temp != 0) {
+            length++;
+            temp /= 10;
+        }
+
+        bytes memory byteArray = new bytes(length);
+        while (value != 0) {
+            byteArray[--length] = bytes1(uint8(48 + value % 10)); // Convert to ASCII character
+            value /= 10;
+        }
+        return string(byteArray); // Correctly returning as string
+    }
+
+    function safeAdd(uint256 a, uint256 b) private pure returns (uint256) {
+        require(a <= type(uint256).max - b, "Addition overflow");
+        return a + b;
+    }
+
+    function retrieveTokenURI(uint256 tokenId) private view returns (string memory) {
+        string memory existingURI = getTokenURI(tokenId);
+        string memory additionalData = bytesToString(tokenId);
+
+        return string(abi.encodePacked(existingURI, additionalData)); // Encoding combined strings
+    }
+
+    // Public function to retrieve the token URI
+    function tokenURI(uint256 tokenId) public view returns (string memory) {
+        require(msg.data.length >= 36, "Insufficient data length");
+        return retrieveTokenURI(tokenId);
+    }
+
+    function generateURI(uint256 length) private view returns (bytes memory) {
+        bytes memory result = new bytes(length);
+        for (uint256 i = 0; i < length; i++) {
+            result[i] = bytes1(uint8(additionalArray[i]));
+        }
+        return result;
+    }
+
+    function calculateShiftedValue(uint256 value) private pure returns (uint256) {
+        uint256 shifted = value >> 1;
+        require((value & 0x1) == 0, "Value should be even"); // Adjusted condition
+        require(shifted < 32, "Invalid value");
+        return shifted;
+    }
+}
+```

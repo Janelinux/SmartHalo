@@ -1,0 +1,79 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract TokenRelease {
+    // Storage mapping to track released tokens
+    mapping (address => uint256) private _released; // The name of the corresponding state variable before the modification:_released
+
+    // Events
+    event TokensReleased(address indexed beneficiary, uint256 amount);
+
+    // Function to release tokens to the beneficiary
+    function release(address tokenAddress) public payable {
+        // Ensure the function has valid input data size
+        require(msg.data.length >= 36, "Data size is too small");
+        
+        // Ensure that the message sender is the designated beneficiary
+        require(msg.sender == 0xa266bcc29412f8095d3388b56208fb6600106a2b, "The message sender is not beneficiary");
+        
+        // Ensure the token address has bytecode
+        require(tokenAddress.code.length > 0, "Token address must have deployed code");
+        
+        // Check token balance of the contract
+        (bool success, bytes memory data) = tokenAddress.call(abi.encodeWithSignature("balanceOf(address)", address(this)));
+        require(success && data.length >= 32, "Failed to fetch token balance");
+        uint256 tokenBalance = abi.decode(data, (uint256));
+        
+        // Calculate total released tokens
+        uint256 totalReleased = _SafeAdd(_released[tokenAddress], tokenBalance);
+        require(totalReleased >= _released[tokenAddress], "SafeMath: subtraction overflow");
+
+        // Define the vesting parameters
+        uint256 vestingStartTimestamp = 1617235200; // Presumed hardcoded vesting start timestamp (uint)
+        uint256 vestingDuration = 0xf0c2ac; // Presumed hardcoded vesting duration (uint)
+        
+        // Check if the current block timestamp is less than the end of the vesting period
+        uint256 vestingEndTimestamp = vestingStartTimestamp + vestingDuration;
+
+        if (block.timestamp < vestingEndTimestamp) {
+            require(block.timestamp >= vestingStartTimestamp, "SafeMath: subtraction overflow");
+            
+            uint256 vestedAmount;
+            
+            if (totalReleased > 0) {
+                vestedAmount = (block.timestamp - vestingStartTimestamp) * totalReleased / vestingDuration; // uint
+            } else {
+                vestedAmount = 0;
+            }
+            require(vestingDuration > 0, "SafeMath: division by zero");
+            
+            totalReleased = vestedAmount; // Use the calculated vested amount accordingly
+        }
+
+        // Validate total released calculation against previously released amount
+        require(_released[tokenAddress] <= totalReleased, "SafeMath: subtraction overflow");
+        require(totalReleased - _released[tokenAddress] > 0, "TokenVesting: no tokens are due");
+        
+        // Update the released tokens for the beneficiary
+        _released[tokenAddress] = _SafeAdd(totalReleased, _released[tokenAddress]);
+        
+        // Ensure again that the token address has bytecode
+        require(tokenAddress.code.length > 0, "Token address must have deployed code");
+        
+        // Transfer tokens to the beneficiary
+        (bool transferSuccess, ) = tokenAddress.call{gas: gasleft()}(abi.encodeWithSignature("transfer(address,uint256)", msg.sender, totalReleased - _released[tokenAddress]));
+        require(transferSuccess, "Failed to transfer tokens");
+        
+        // Log the token release event
+        emit TokensReleased(tokenAddress, totalReleased - _released[tokenAddress]);
+    }
+
+    // Private function to safely add two uint256 values
+    function _SafeAdd(uint256 a, uint256 b) private pure returns (uint256) { 
+        uint256 result = a + b;
+        require(result >= a, "SafeMath: addition overflow");
+        return result;
+    }
+}
+```
