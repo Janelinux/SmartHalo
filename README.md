@@ -1,4 +1,4 @@
-# Smart contract decompilation code enhancement and optimization tool
+# Augmenting Smart Contract Decompiler Output via Hybrid Static Analysis and Large Language Models
 
 <font size="4">***The current decompiler has  defects***</font>
 
@@ -30,7 +30,7 @@
 
 <font size="3">Here, we present the artifact of SmartHalo, the evaluation dataset used to evaluating the effectiveness of SmartHalo, the static violation rejection rules integrated by SmartHalo and the details of manual summarizing process for contract attribute candidates .</font>
 
-The usage method of this tool can be found in the smartAlo folder. You can click [here](./SmartHalo/README.md) to read.
+The usage method of this tool can be found in the smartHalo folder. You can click [here](./SmartHalo/README.md) to read.
 
 ## Dataset
 
@@ -39,6 +39,10 @@ The usage method of this tool can be found in the smartAlo folder. You can click
 ## SmartHalo
 
 <font size="3">The artifact that are inplemented according to our proposed decompiler output optimization method</font>
+
+## model_information.xlsx
+
+<font size="3">The model information from our experiments is saved here.</font>
 
 ## Static_Violation_Rejection_Rules.pdf
 
