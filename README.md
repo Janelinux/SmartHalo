@@ -40,9 +40,16 @@ The usage method of this tool can be found in the smartHalo folder. You can clic
 
 <font size="3">The artifact implemented according to our proposed decompiler output optimization method.</font>
 
-## model_information.xlsx
+## Api configuration
 
-<font size="3">The model information from our experiments is saved here.</font>
+| Model Identifier      | Server Provider | Version/Release Date | Invocation Endpoints                                  | Context Length Limit | Repository Address                        |
+|:----------------------|:----------------|:---------------------|:------------------------------------------------------|:---------------------|:-------------------------------------------|
+| o4-mini               | Open AI         | 2025.4               | https://api.agicto.cn/v1                              | 20W                  | /                                          |
+| GPT-4Turbo            | Open AI         | 2023.11              | https://api.agicto.cn/v1                              | 128K                 | /                                          |
+| 4o-mini               | Open AI         | 2024.7               | https://api.agicto.cn/v1                              | 128K                 | /                                          |
+| Qwen3-Coder-Plus      | Alibaba Cloud   | 2025.7               | https://dashscope-intl.aliyuncs.com/compatible-mode/v1 | 128K                 | https://github.com/QwenLM/qwen-code        |
+| deepseek-r1           | DeepSeek        | 2025.1               | https://dashscope-intl.aliyuncs.com/compatible-mode/v1 | 128K                 | https://github.com/deepseek-ai/DeepSeek-R1 |
+| llama 3.1 instruct 8B | Meta            | 2024.07              |                                                       | 128k                 | https://github.com/meta-llama/llama        |
 
 ## Static_Violation_Rejection_Rules.pdf
 
