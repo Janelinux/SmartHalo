@@ -40,7 +40,7 @@ The usage method of this tool can be found in the smartHalo folder. You can clic
 
 <font size="3">The artifact implemented according to our proposed decompiler output optimization method.</font>
 
-## Api configuration
+## API configuration
 
 | Model Identifier      | Server Provider | Version/Release Date | Invocation Endpoints                                  | Context Length Limit | Repository Address                        |
 |:----------------------|:----------------|:---------------------|:------------------------------------------------------|:---------------------|:-------------------------------------------|
